@@ -1,0 +1,6 @@
+0000000000000000000000000000000000000000 b700afb81678b67b4aa11bf3f2a712e2146f8087 cCodiel24 <danielweyandt@gmail.comm> 1750335151 +0200	branch: Created from HEAD
+b700afb81678b67b4aa11bf3f2a712e2146f8087 bc2023f197198e4f77cecafc12ba69374bd46c43 cCodiel24 <danielweyandt@gmail.comm> 1750335453 +0200	commit: Refactor: Extract database logic to db_operations.py
+bc2023f197198e4f77cecafc12ba69374bd46c43 77f0163d0c0c23e28d0230b88294e0fc01e55dc4 cCodiel24 <danielweyandt@gmail.comm> 1750338461 +0200	commit: Refactor: Extract DB logic and fix skip/save bugs
+77f0163d0c0c23e28d0230b88294e0fc01e55dc4 e94e90c706a041c752c621c554f5ff4b8a813e93 cCodiel24 <danielweyandt@gmail.comm> 1750346511 +0200	commit: Feat: Restore full Chrome functionality; Firefox delete confirm pending
+e94e90c706a041c752c621c554f5ff4b8a813e93 bb1a09e18223c8be8ca3905d6e05318ebe4d58ea cCodiel24 <danielweyandt@gmail.comm> 1750518031 +0200	commit: feat: Prepare for deployment and fix PWA caching
+bb1a09e18223c8be8ca3905d6e05318ebe4d58ea b38fb027c49a87d69fa77692ef7dd197caa2ad4d cCodiel24 <danielweyandt@gmail.comm> 1750523642 +0200	commit: refactor: Make GSheet credential loading cloud-friendly
