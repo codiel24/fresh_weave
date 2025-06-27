@@ -296,34 +296,158 @@ const predefinedPeople = ['S', 'Fam', 'Stef', 'MD', 'AK', 'ML', 'work'];
 
         console.log(`--- DEBUG (loadNextSujet): Mode: ${editMode}, Query: /get_sujet?${queryString} ---`);
 
-        try {
-            const response = await fetch(`/get_sujet?${queryString}`);
-            const data = await response.json();
+    const activeTags = Array.from(tagTogglesDiv.querySelectorAll('.tag-toggle.active')).map(btn => {
+        // Use the full name from the title if it exists (for abbreviations), otherwise use textContent
+        return btn.title || btn.textContent.trim();
+    });
 
-            if (data.status === 'no_more_sujets') {
-                sujetContentDiv.classList.add('hidden');
-                noMoreSujetsDiv.classList.remove('hidden');
-                const message = editMode === 'filter' ? 'No more sujets matching your filters.' : 'You have reached the end of the list.';
-                noMoreSujetsDiv.textContent = message;
-                saveButton.disabled = true;
-                skipButton.disabled = true;
-                deleteButton.disabled = true;
-                currentSujetId = null;
-                updateGlobalButtonStates(false, history.length);
-            } else if (data.status === 'ok' && data.sujet) {
-                if (history.length === 0 || history[history.length - 1] !== data.sujet.id) {
-                    history.push(data.sujet.id);
-                    if (history.length > historySize) history.shift();
-                }
-                displaySujet(data.sujet);
-                currentOffset++;
-            } else {
-                handleLoadError("Error loading sujet: " + (data.message || "Unknown error"));
-            }
-        } catch (error) {
-            handleLoadError("Network Error: " + error.message);
-        }
+    const activePeople = Array.from(personTogglesDiv.querySelectorAll('.person-toggle.active')).map(btn => {
+        return btn.title || btn.textContent.trim();
+    });
+
+    userTagsInput.value = activeTags.join(', ');
+    currentSujetData.person = activePeople.join(', ');
+}
+
+function updateToggleAppearance() {
+    if (editMode === 'filter') {
+        document.querySelectorAll('.tag-toggle').forEach(btn => {
+            btn.classList.toggle('active', activeFilterState.tags.includes(btn.dataset.value));
+        });
+        document.querySelectorAll('.person-toggle').forEach(btn => {
+            btn.classList.toggle('active', activeFilterState.people.includes(btn.dataset.value));
+        });
+    } else { // 'tag' mode
+        if (!currentSujetData) return;
+        const sujetTags = parseCsvString(userTagsInput.value);
+        const sujetPeople = parseCsvString(currentSujetData.person);
+        document.querySelectorAll('.tag-toggle').forEach(btn => {
+            btn.classList.toggle('active', sujetTags.includes(btn.dataset.value));
+        });
+        document.querySelectorAll('.person-toggle').forEach(btn => {
+            btn.classList.toggle('active', sujetPeople.includes(btn.dataset.value));
+        });
     }
+}
+
+function displaySujet(sujet) {
+    currentSujetId = sujet.id;
+    currentSujetData = sujet;
+    // Parse ID and Title from sujet.original_sujet (e.g., "ID: 123 - Title Text")
+    const match = sujet.original_sujet.match(/^ID:\s*(\d+)\s*-\s*(.*)$/);
+    if (match && match[1] && match[2]) {
+        displaySujetIdSpan.textContent = match[1]; // Just the ID number
+        originalSujetSpan.textContent = match[2]; // Just the Title text
+    } else {
+        // Fallback if parsing fails, though this shouldn't happen with consistent data
+        displaySujetIdSpan.textContent = sujet.id; // Use sujet.id as a fallback for the number
+        originalSujetSpan.textContent = sujet.original_sujet; // Show the original string as fallback title
+    }
+
+    aiSuggestionSpan.textContent = sujet.ai_suggestion;
+    viewCountSpan.textContent = sujet.view_count;
+    currentStatusSpan.textContent = sujet.status;
+    userNotesTextarea.value = sujet.user_notes || '';
+    userTagsInput.value = sujet.user_tags || '';
+
+    updateToggleAppearance();
+
+    noMoreSujetsDiv.classList.add('hidden');
+    sujetContentDiv.classList.remove('hidden');
+    saveButton.disabled = false;
+    skipButton.disabled = false;
+    deleteButton.disabled = false;
+    updateGlobalButtonStates(true, history.length);
+}
+
+function getActiveFiltersForQuery() {
+    if (editMode === 'filter') {
+        return {
+            tags: activeFilterState.tags,
+            people: activeFilterState.people
+        };
+    } else { // 'tag' mode or any other mode
+        return {
+            tags: [],  // Send empty array to not filter by tags
+            people: [] // Send empty array to not filter by people
+        };
+    }
+}
+
+async function updateSujetCount() {
+    const filters = getActiveFiltersForQuery();
+    let queryParams = [];
+    if (filters.tags && filters.tags.length > 0) {
+        queryParams.push(`tags=${filters.tags.map(encodeURIComponent).join(',')}`);
+    }
+    if (filters.people && filters.people.length > 0) {
+        queryParams.push(`people=${filters.people.map(encodeURIComponent).join(',')}`);
+    }
+    const queryString = queryParams.join('&');
+    let filteredCount = 0;
+    let totalCount = 0;
+
+    try {
+        const response = await fetch(`/get_sujets_count?${queryString}`);
+        const data = await response.json();
+        filteredCount = data.status === 'ok' ? data.count : 0;
+    } catch (error) {
+        console.error('Network error fetching filtered sujet count:', error);
+    }
+
+    try {
+        const totalResponse = await fetch(`/get_sujets_count`);
+        const totalData = await totalResponse.json();
+        totalCount = totalData.status === 'ok' ? totalData.count : 0;
+    } catch (error) {
+        console.error('Network error fetching total sujet count:', error);
+    }
+    
+    sujetCountDisplay.textContent = `${filteredCount} / ${totalCount}`;
+}
+
+async function loadNextSujet() {
+    const filters = getActiveFiltersForQuery();
+    let queryParams = [`offset=${currentOffset}`];
+    if (filters.tags.length > 0) {
+        queryParams.push(`tags=${filters.tags.map(encodeURIComponent).join(',')}`);
+    }
+    if (filters.people.length > 0) {
+        queryParams.push(`people=${filters.people.map(encodeURIComponent).join(',')}`);
+    }
+    const queryString = queryParams.join('&');
+
+    console.log(`--- DEBUG (loadNextSujet): Mode: ${editMode}, Query: /get_sujet?${queryString} ---`);
+
+    try {
+        const response = await fetch(`/get_sujet?${queryString}`);
+        const data = await response.json();
+
+        if (data.status === 'no_more_sujets') {
+            if (editMode === 'filter') {
+                // Keep panel visible so the user can adjust filters
+                sujetContentDiv.classList.remove('hidden');
+            } else {
+                sujetContentDiv.classList.add('hidden');
+            }
+            noMoreSujetsDiv.classList.remove('hidden');
+            const message = editMode === 'filter' ? 'No more sujets matching your filters.' : 'You have reached the end of the list.';
+            noMoreSujetsDiv.textContent = message;
+            saveButton.disabled = true;
+            skipButton.disabled = true;
+            deleteButton.disabled = true;
+            currentSujetId = null;
+            updateGlobalButtonStates(false, history.length);
+        } else if (data.status === 'ok' && data.sujet) {
+            displaySujet(data.sujet);
+            currentOffset++;
+        } else {
+            handleLoadError("Error loading sujet: " + (data.message || "Unknown error"));
+        }
+    } catch (error) {
+        handleLoadError("Network Error: " + error.message);
+    }
+}
     
     function handleLoadError(message) {
         sujetContentDiv.classList.add('hidden');

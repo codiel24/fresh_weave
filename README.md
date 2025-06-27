@@ -117,4 +117,18 @@ _Completed since last update: Delete button, Reverse-sort toggle, Person field i
     *   **Assessment:** While the refactoring process introduced significant temporary instability and consumed considerable debugging time (primarily due to errors in managing import changes), the resulting modular code structure is an improvement for long-term maintainability and separation of concerns. `app.py` is now more focused on request handling and core application flow.
 
 ---
+
+## 8. Lessons Learned (June 2025)
+
+1. **Render persistent-disk rule of thumb**  The application image is read-only; anything you `scp` into a running pod disappears on the next deploy. Always mount or reference files from `/var/data` (the persistent disk) or set an env-var (`DATABASE_PATH=/var/data/sujets.db`) so the code points there.
+2. **Code > copy**  Hard-coding `instance/sujets.db` inside the code caused the mysterious `no such table` error. One-line fix: read the path from `os.getenv("DATABASE_PATH", "instance/sujets.db")` so the same code works locally and on Render.
+3. **Symlinks are stop-gaps**  Copying/ linking the DB into the container worked until the next restart. Refactor the code instead of relying on manual copies.
+4. **Git remote hygiene**  A miss-typed remote URL (`fresh_weav`) and mismatched branch names (`master` vs `main`) blocked pushes. Use `git remote -v`, `git remote set-url`, and `git branch -M main` to verify.
+5. **Scope your repo**  The original repository’s root included unrelated personal projects, making `git add .` painful. Starting a fresh repo inside the `Weave` folder kept history clean.
+6. **Stashing vs new repo**  Windows file locks can break `git stash --include-untracked`. When that happens, renaming the parent `.git` and running `git init` in the project folder is faster.
+7. **Render deploy cycle**  Push → Render builds → new pod picks up env-vars and persistent disk. No need to `scp` code files; let Git trigger the deploy.
+
+These points are living knowledge—feel free to extend or refine as the project evolves.
+
+---
 *This document should be updated regularly as the project evolves.*
