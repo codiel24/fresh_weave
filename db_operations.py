@@ -197,6 +197,59 @@ def get_all_unique_people():
     people = [row['person'] for row in cursor.fetchall()]
     return sorted(people)
 
+def get_adjacent_sujet(current_id, tags, people, sort_order='ASC', direction='next'):
+    """Fetches the sujet immediately before or after the given ID respecting filters & sort order.
+
+    Args:
+        current_id (int): The reference sujet ID.
+        tags (list[str]): Tag filter list (already lowercase).
+        people (list[str]): People filter list (already lowercase).
+        sort_order (str): Current sort order in the UI/session ('ASC'|'DESC').
+        direction (str): 'next' or 'prev'.
+
+    Returns:
+        Row or None
+    """
+    db = get_db()
+
+    # Determine SQL comparison operator and ORDER BY direction.
+    if direction == 'next':
+        if sort_order.upper() == 'ASC':
+            comparator, order = '>', 'ASC'
+        else:  # DESC sort, so the next item (visually forward) has a LOWER id
+            comparator, order = '<', 'DESC'
+    elif direction == 'prev':
+        if sort_order.upper() == 'ASC':
+            comparator, order = '<', 'DESC'
+        else:
+            comparator, order = '>', 'ASC'
+    else:
+        raise ValueError("direction must be 'next' or 'prev'")
+
+    filters = {
+        'tags': tags,
+        'people': people,
+    }
+
+    # Build WHERE clause using helper to reuse tag/people logic
+    base_query, params = build_sujet_query(filters)
+    # Remove the trailing ORDER BY (if any) because we'll append our own.
+    # build_sujet_query only adds ORDER BY when not select_count, so we can split at 'ORDER BY'.
+    if 'ORDER BY' in base_query:
+        base_query = base_query.split('ORDER BY')[0].strip()
+
+    base_query += f" AND id {comparator} ?"
+    params.append(current_id)
+
+    # Append ORDER BY ensuring we get the adjacent row.
+    base_query += f" ORDER BY id {order} LIMIT 1"
+
+    row = db.execute(base_query, params).fetchone()
+    if row:
+        db.execute('UPDATE sujets SET view_count = view_count + 1 WHERE id = ?', (row['id'],))
+        db.commit()
+        return get_sujet_by_id(row['id'])
+    return None
 
 # --- CLI Commands ---
 @click.command('add-sujets')
