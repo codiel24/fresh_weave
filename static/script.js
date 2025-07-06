@@ -368,6 +368,38 @@ const predefinedPeople = ['S', 'Fam', 'Stef', 'MD', 'AK', 'ML', 'work'];
         }
     }
 
+    async function loadAdjacentSujet(direction = 'next') {
+        if (!currentSujetId) {
+            console.warn('loadAdjacentSujet called but currentSujetId is null');
+            return;
+        }
+
+        const filters = getActiveFiltersForQuery();
+        const qp = [
+            `id=${currentSujetId}`,
+            `direction=${direction}`
+        ];
+        if (filters.tags.length) qp.push(`tags=${filters.tags.map(encodeURIComponent).join(',')}`);
+        if (filters.people.length) qp.push(`people=${filters.people.map(encodeURIComponent).join(',')}`);
+
+        try {
+            const res = await fetch(`/adjacent_sujet?${qp.join('&')}`);
+            const data = await res.json();
+
+            if (data.status === 'ok' && data.sujet) {
+                displaySujet(data.sujet);
+            } else if (data.status === 'no_more_sujets') {
+                // Wrap around to first or last depending on direction
+                const edge = direction === 'next' ? 'first' : 'last';
+                await loadEdgeSujet(edge);
+            } else {
+                handleLoadError(`Navigation error: ${data.message || 'unknown'}`);
+            }
+        } catch (err) {
+            handleLoadError('Network error navigating: ' + err.message);
+        }
+    }
+
     async function loadEdgeSujet(edge) {
         try {
             const response = await fetch(`/${edge}`);
@@ -419,8 +451,8 @@ const predefinedPeople = ['S', 'Fam', 'Stef', 'MD', 'AK', 'ML', 'work'];
 
             if (response.ok) {
                 console.log(`--- DEBUG (handleSujetAction): Sujet ${actionType} successfully. Server says: ${data.message} ---`);
-                // After saving or skipping, always load the next sujet in the sequence.
-                loadNextSujet();
+                // After saving or skipping, move deterministically to adjacent sujet
+                loadAdjacentSujet('next');
             } else {
                 throw new Error(data.message || `Server responded with status ${response.status}`);
             }
@@ -456,9 +488,8 @@ const predefinedPeople = ['S', 'Fam', 'Stef', 'MD', 'AK', 'ML', 'work'];
             const response = await fetch(`/delete_sujet/${currentSujetId}`, { method: 'DELETE' });
             const data = await response.json();
             if (response.ok && data.status === 'success') {
-                const indexInHistory = history.indexOf(currentSujetId);
-                if (indexInHistory > -1) history.splice(indexInHistory, 1);
-                loadNextSujet();
+                // After deletion, move to the next sujet in sequence
+                loadAdjacentSujet('next');
                 updateSujetCount();
             } else {
                 alert(`Error deleting sujet: ${data.message || 'Unknown error'}`);
@@ -492,10 +523,11 @@ const predefinedPeople = ['S', 'Fam', 'Stef', 'MD', 'AK', 'ML', 'work'];
             const result = await response.json();
             if (response.ok && result.status === 'ok') {
                 // Start fresh in the new sort order
-                history.length = 0;      // clear navigation stack
-                currentOffset = 0;        // restart offset at beginning
+                currentSujetId = null;
+                currentOffset = 0;
                 updateSujetCount();
-                loadNextSujet();
+                // Load first sujet in the new order
+                loadEdgeSujet('first');
             } else {
                 alert(`Error toggling sort order: ${result.message || 'Unknown error'}`);
             }
@@ -514,13 +546,7 @@ const predefinedPeople = ['S', 'Fam', 'Stef', 'MD', 'AK', 'ML', 'work'];
     lastSujetButton.addEventListener('click', () => loadEdgeSujet('last'));
 
     backButton.addEventListener('click', () => {
-        if (history.length > 1) {
-            history.pop(); // Remove the current sujet from history
-            const previousSujetId = history[history.length - 1]; // Peek at the new last ID
-            loadSujetById(previousSujetId);
-        } else {
-            console.log("--- DEBUG: Back button clicked, but no history to go back to. ---");
-        }
+        loadAdjacentSujet('prev');
     });
 
     modeToggleRadios.forEach(radio => {
