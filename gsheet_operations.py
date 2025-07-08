@@ -76,11 +76,11 @@ def log_sujet_to_sheet(**sujet_data):
     Public-facing function to log a sujet to Google Sheets.
     This is a wrapper that handles getting the sheet client and then calls the implementation.
     Accepts sujet data as keyword arguments.
+    Returns a tuple (success, message).
     """
     _client, sheet = get_gsheet_client()
     if not sheet:
         print("--- WARNING (log_sujet_to_sheet): Could not get sheet client. Aborting log. ---")
-        return False
+        return False, "Could not get sheet client. Check credentials."
 
-    success, _message = _log_sujet_to_sheet_impl(sheet, sujet_data)
-    return success
+    return _log_sujet_to_sheet_impl(sheet, sujet_data)

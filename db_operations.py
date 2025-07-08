@@ -236,7 +236,11 @@ def get_adjacent_sujet(current_id, tags, people, sort_order='ASC', direction='ne
     if 'ORDER BY' in base_query:
         base_query = base_query.split('ORDER BY')[0].strip()
 
-    base_query += f" AND id {comp} ?"
+    # Append the id comparator, ensuring we include a WHERE clause if one doesn't already exist
+    if ' WHERE ' in base_query.upper():
+        base_query += f" AND id {comp} ?"
+    else:
+        base_query += f" WHERE id {comp} ?"
     params.append(current_id)
     base_query += f" ORDER BY id {order} LIMIT 1"
 
