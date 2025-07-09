@@ -1,0 +1,15 @@
+{
+  "name": "weave-app",
+  "version": "0.1.0",
+  "description": "Weave webapp front-end scripts and test harness",
+  "private": true,
+  "scripts": {
+    "test": "jest",
+    "e2e": "playwright test"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "playwright": "^1.44.0",
+    "jest-environment-jsdom": "^29.7.0"
+  }
+}
