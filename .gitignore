@@ -1,0 +1,38 @@
+# never commit credential files
+*key*.json
+*.pem
+*.p12
+
+# Python virtual environment
+venv/
+env/
+node_modules/
+.env/
+.venv/
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# IDE settings
+.vscode/
+.idea/
+
+# Local development settings
+.env
+*.log
+
+# Weave-specific generated files & secrets
+instance/
+*.db
+*.db-journal
+sujet_enrichments.csv
+last_processed_index.txt
+weave-*.json
+.~lock.initial_sujets.csv#

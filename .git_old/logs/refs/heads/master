@@ -1,0 +1,22 @@
+0000000000000000000000000000000000000000 e7089488861e0c82f3699cf9465bb13a580619a0 cCodiel24 <danielweyandt@gmail.comm> 1745333185 +0200	commit (initial): test commit
+e7089488861e0c82f3699cf9465bb13a580619a0 d31d2f3fa26f9422c126b275b72497d35ca00eca cCodiel24 <danielweyandt@gmail.comm> 1746356473 +0200	commit: feat: Implement MVP web app with basic enrichment and Google Sheets logging
+d31d2f3fa26f9422c126b275b72497d35ca00eca a83910549120e376640ad4be17edcdc7647b3078 cCodiel24 <danielweyandt@gmail.comm> 1749666345 +0200	commit: feat: Implement delete and reverse sort functionality
+a83910549120e376640ad4be17edcdc7647b3078 dc170f18ad567567e525b710119cc55ce3fded17 cCodiel24 <danielweyandt@gmail.comm> 1749666880 +0200	commit: feat: Implement delete and reverse sort functionality
+dc170f18ad567567e525b710119cc55ce3fded17 d4f4c7895d1873b9fe2c93e5b60c2c803f58f721 cCodiel24 <danielweyandt@gmail.comm> 1749668077 +0200	commit: feat: Implement Quick Spark and update status
+d4f4c7895d1873b9fe2c93e5b60c2c803f58f721 ac42daa5420bbc054b79a28d67f37ea2e7402001 cCodiel24 <danielweyandt@gmail.comm> 1749835205 +0200	commit: Before dropping needs enrichment
+ac42daa5420bbc054b79a28d67f37ea2e7402001 e30a36a4b04ac209218daf4c8e8c94d89d758fde cCodiel24 <danielweyandt@gmail.comm> 1749838740 +0200	commit: Feat: Switch to a static, curated list of tags
+e30a36a4b04ac209218daf4c8e8c94d89d758fde 6c119626a0d225268dbe5457bf70be533b0e5cc4 cCodiel24 <danielweyandt@gmail.comm> 1749838863 +0200	commit: Docs: Update project status with recent features
+6c119626a0d225268dbe5457bf70be533b0e5cc4 0e52b21d1080f010e0062eb06879a6da812aadea cCodiel24 <danielweyandt@gmail.comm> 1749907133 +0200	commit: feat: Implement multi-select people tags and enable debug mode
+0e52b21d1080f010e0062eb06879a6da812aadea fd3a5109f14c93423b370ee189f4c18d130d953d cCodiel24 <danielweyandt@gmail.comm> 1749907821 +0200	commit: docs: Update project status and TODO list
+fd3a5109f14c93423b370ee189f4c18d130d953d bcbe09ebb09b30a2f642da8c8c39c50856e3456c cCodiel24 <danielweyandt@gmail.comm> 1750078322 +0200	commit: feat: Implement filter/tag mode toggle and improve button states
+bcbe09ebb09b30a2f642da8c8c39c50856e3456c 7456941ed42006a404d6f240139af26de8f8537f cCodiel24 <danielweyandt@gmail.comm> 1750080099 +0200	commit: fix: Restore Back button functionality by preventing history clear on filter change
+7456941ed42006a404d6f240139af26de8f8537f 116d8dbb3a71c0d9100a2a499649e9051366e820 cCodiel24 <danielweyandt@gmail.comm> 1750081097 +0200	commit: refactor(UI): Remove Tags and Person labels from headers
+116d8dbb3a71c0d9100a2a499649e9051366e820 f646776bdd78f5b0e91fe604a09ad86d0a2636a4 cCodiel24 <danielweyandt@gmail.comm> 1750082226 +0200	commit: feat(UI): Display Sujet ID and Title separately and correctly
+f646776bdd78f5b0e91fe604a09ad86d0a2636a4 8de326a95660d5c7765388084be777c80d3c6a69 cCodiel24 <danielweyandt@gmail.comm> 1750083666 +0200	commit: UI/UX: Sujet title font and info line now match filter mode label; compact, consistent, and stable layout
+8de326a95660d5c7765388084be777c80d3c6a69 9a524b9896f337c47aa0ca6f32231cbacc0025e7 cCodiel24 <danielweyandt@gmail.comm> 1750264214 +0200	commit: Fix UI layout: Restore All buttons and ensure toggle visibility in both info line and people row
+9a524b9896f337c47aa0ca6f32231cbacc0025e7 8de326a95660d5c7765388084be777c80d3c6a69 cCodiel24 <danielweyandt@gmail.comm> 1750267027 +0200	reset: moving to HEAD~1
+8de326a95660d5c7765388084be777c80d3c6a69 ef5d051fa80e16c2732a1871a84a3eff425304a3 cCodiel24 <danielweyandt@gmail.comm> 1750271549 +0200	commit: Fix: Resolve duplicate 'All' buttons and finalize mobile UI compactness before PWA deployment
+ef5d051fa80e16c2732a1871a84a3eff425304a3 f63f4409320b02104462066c6c1b841614d7cded cCodiel24 <danielweyandt@gmail.comm> 1750273431 +0200	commit: Feat: Add 'add-sujets' CLI command for incremental imports
+f63f4409320b02104462066c6c1b841614d7cded 9279e6f948461cadd9c19b3f17488910c223bff4 cCodiel24 <danielweyandt@gmail.comm> 1750273577 +0200	commit: Refactor: Make init-db command robust to multiple CSV formats
+9279e6f948461cadd9c19b3f17488910c223bff4 da0a416b3e9663d750e518d5daaf12cccac24f6f cCodiel24 <danielweyandt@gmail.comm> 1750279026 +0200	commit: Fix: Correct UI logic for Tag and Filter modes
+da0a416b3e9663d750e518d5daaf12cccac24f6f b700afb81678b67b4aa11bf3f2a712e2146f8087 cCodiel24 <danielweyandt@gmail.comm> 1750335146 +0200	commit: Docs: Consolidate to README, update .gitignore, and include recent modifications

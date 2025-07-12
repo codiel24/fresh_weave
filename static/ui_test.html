@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UI Test - Weave</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            font-size: 14px;
+        }
+        .test-container {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .info-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0;
+            padding: 5px;
+            background: #f5f5f5;
+        }
+        .people-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin: 10px 0;
+            padding: 5px;
+            background: #f0f8ff;
+        }
+        .toggle-container {
+            display: flex;
+            gap: 5px;
+        }
+        .person-btn, .toggle-btn, .select-all {
+            padding: 4px 8px;
+            background: #e0e0e0;
+            border: 1px solid #999;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .person-btn.active, .toggle-btn.active {
+            background: #4CAF50;
+            color: white;
+            border-color: #45a049;
+        }
+        
+        .person-btn {
+            background: #e9ecef;
+        }
+        
+        .person-btn.active {
+            background: #007bff;
+            color: white;
+            border-color: #0056b3;
+        }
+        .toggle-btn.active {
+            background: #4CAF50;
+            color: white;
+        }
+        .select-all {
+            margin-left: auto;
+            background: #6c757d;
+            color: white;
+            border-color: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <h1>UI Elements Test</h1>
+    
+    <div class="test-container">
+        <h2>Info Line</h2>
+        <div class="info-line">
+            <span id="sujet-count">1/10</span>
+            <div class="toggle-container">
+                <span>Status: New</span>
+                <span>|</span>
+                <span>Views: 5</span>
+                <div class="toggle-container" style="margin-left: 10px;">
+                    <button class="toggle-btn active" data-mode="filter">F</button>
+                    <button class="toggle-btn" data-mode="tag">T</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-container">
+        <h2>People Row</h2>
+        <div class="people-row">
+            <button class="person-btn">S</button>
+            <button class="person-btn">Fam</button>
+            <button class="person-btn">Stef</button>
+            <button class="person-btn">MD</button>
+            <button class="person-btn">AK</button>
+            <button class="person-btn">ML</button>
+            <button class="person-btn">Work</button>
+            <button class="select-all">All</button>
+            <div class="toggle-container">
+                <button class="toggle-btn active" data-mode="filter">F</button>
+                <button class="toggle-btn" data-mode="tag">T</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize on DOM content loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Toggle functionality for F/T buttons
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const mode = this.dataset.mode;
+                    
+                    // Update all toggle buttons
+                    document.querySelectorAll('.toggle-btn').forEach(b => {
+                        b.classList.toggle('active', b.dataset.mode === mode);
+                    });
+                    
+                    console.log(`Mode changed to: ${mode}`);
+                });
+            });
+
+            // Person button toggle
+            document.querySelectorAll('.person-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    this.classList.toggle('active');
+                    updateAllButtonState();
+                });
+            });
+
+            // Select/Deselect all people
+            document.querySelector('.select-all').addEventListener('click', function(e) {
+                e.stopPropagation();
+                const allPersonBtns = document.querySelectorAll('.person-btn');
+                const allActive = Array.from(allPersonBtns).every(btn => btn.classList.contains('active'));
+                
+                allPersonBtns.forEach(btn => {
+                    btn.classList.toggle('active', !allActive);
+                });
+                
+                updateAllButtonState();
+            });
+            
+            // Update All button state based on person buttons
+            function updateAllButtonState() {
+                const allPersonBtns = document.querySelectorAll('.person-btn');
+                const allActive = allPersonBtns.length > 0 && 
+                                Array.from(allPersonBtns).every(btn => btn.classList.contains('active'));
+                
+                const allBtn = document.querySelector('.select-all');
+                allBtn.textContent = allActive ? 'None' : 'All';
+                allBtn.classList.toggle('active', allActive);
+            }
+            
+            // Initialize
+            updateAllButtonState();
+            
+            // Set initial active state for toggles
+            document.querySelector('.toggle-btn[data-mode="filter"]').classList.add('active');
+        });
+    </script>
+</body>
+</html>
