@@ -1,0 +1,204 @@
+// weave_webapp/static/script.js
+
+document.addEventListener('DOMContentLoaded', () => {
+    // --- DOM Elements ---
+    const originalSujetSpan = document.getElementById('original-sujet');
+    const displaySujetIdSpan = document.getElementById('display-sujet-id');
+    const aiSuggestionSpan = document.getElementById('ai-suggestion');
+    const viewCountSpan = document.getElementById('view-count');
+    const currentStatusSpan = document.getElementById('current-status');
+    const userNotesTextarea = document.getElementById('user-notes');
+    const userTagsInput = document.getElementById('user-tags');
+    const tagTogglesDiv = document.getElementById('tag-toggles');
+    const personTogglesDiv = document.getElementById('person-toggles');
+    const sujetCountDisplay = document.getElementById('sujet-count-display');
+    const modeToggleRadios = document.querySelectorAll('input[name="edit-mode"]');
+    const selectAllTagsButton = document.getElementById('select-all-tags');
+    const selectAllPeopleButton = document.getElementById('select-all-people');
+    const saveButton = document.getElementById('save-button');
+    const skipButton = document.getElementById('skip-button');
+    const backButton = document.getElementById('back-button');
+    const deleteButton = document.getElementById('delete-button');
+    const reverseSortButton = document.getElementById('reverse-sort-button');
+    const quickSparkButton = document.getElementById('quick-spark-button');
+    const sujetContentDiv = document.getElementById('sujet-content');
+    const noMoreSujetsDiv = document.getElementById('no-more-sujets');
+
+    // --- State Variables ---
+    let currentSujetId = null;
+    let currentSujetData = null;
+    let currentOffset = 0;
+    const history = [];
+    const historySize = 10;
+    let editMode = 'filter'; // 'filter' or 'tag'
+    let activeFilterState = { tags: [], people: [] };
+
+    const predefinedTags = [
+        'AI', 'Wrk', 'Med', 'Sci', 'Hist', 'Pol', 'Cult',
+        'Sprt', 'Trvl', 'Food', 'Obs', 'Quote', 'Ppl', 'Idea'
+    ];
+    const predefinedPeople = ['S', 'Fam', 'Stef', 'MD', 'AK', 'ML', 'Wrk'];
+
+    // --- Utility Functions ---
+
+    function updateGlobalButtonStates(sujetIsLoaded, currentHistoryLength) {
+        saveButton.disabled = !sujetIsLoaded;
+        skipButton.disabled = !sujetIsLoaded;
+        deleteButton.disabled = !sujetIsLoaded;
+        backButton.disabled = currentHistoryLength <= 1;
+        quickSparkButton.disabled = false;
+        reverseSortButton.disabled = false;
+    }
+
+    function parseCsvString(csvString) {
+        if (!csvString) return [];
+        return csvString.split(',').map(item => item.trim().toLowerCase()).filter(Boolean);
+    }
+
+    // --- Core Rendering and UI Update Functions ---
+
+    function renderToggles(container, items, type) {
+        if (!container) return;
+        container.innerHTML = '';
+        items.forEach((item, idx) => {
+            if (!item) return;
+            const button = document.createElement('button');
+            button.textContent = item.trim();
+            button.classList.add(`${type}-toggle`);
+            button.classList.add('active');
+            button.dataset.value = item.trim().toLowerCase();
+            container.appendChild(button);
+        });
+    }
+
+    function updateToggleAppearance() {
+        // Update tag toggles
+        document.querySelectorAll('.tag-toggle').forEach(button => {
+            button.classList.toggle('active', editMode === 'tag' || 
+                activeFilterState.tags.includes(button.dataset.value));
+        });
+
+        // Update people toggles
+        document.querySelectorAll('.person-toggle').forEach(button => {
+            button.classList.toggle('active', editMode === 'tag' || 
+                activeFilterState.people.includes(button.dataset.value));
+        });
+    }
+
+    function displaySujet(sujet) {
+        if (!sujet) {
+            sujetContentDiv.classList.add('hidden');
+            noMoreSujetsDiv.classList.remove('hidden');
+            return;
+        }
+
+        currentSujetId = sujet.id;
+        currentSujetData = sujet;
+        
+        displaySujetIdSpan.textContent = `#${sujet.id}`;
+        originalSujetSpan.textContent = sujet.original_sujet;
+        aiSuggestionSpan.textContent = sujet.ai_suggestion || '';
+        viewCountSpan.textContent = sujet.view_count || 0;
+        currentStatusSpan.textContent = sujet.status || 'new';
+        userNotesTextarea.value = sujet.user_notes || '';
+        userTagsInput.value = sujet.user_tags || '';
+
+        sujetContentDiv.classList.remove('hidden');
+        noMoreSujetsDiv.classList.add('hidden');
+
+        // Update button states
+        updateGlobalButtonStates(true, history.length);
+    }
+
+    async function loadNextSujet() {
+        try {
+            const response = await fetch('/get_next_sujet', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    offset: currentOffset,
+                    filters: getActiveFiltersForQuery()
+                })
+            });
+            
+            const data = await response.json();
+            if (data.status === 'success' && data.sujet) {
+                if (history.length === 0 || history[history.length - 1] !== data.sujet.id) {
+                    history.push(data.sujet.id);
+                    if (history.length > historySize) history.shift();
+                }
+                displaySujet(data.sujet);
+                currentOffset = 0; // Reset offset after successful load
+            } else {
+                handleLoadError(data.message || 'No more sujets found');
+            }
+        } catch (error) {
+            handleLoadError('Network error: ' + error.message);
+        }
+    }
+
+    // --- Event Handlers ---
+    async function handleSujetAction(actionType) {
+        if (!currentSujetId) return;
+
+        try {
+            const response = await fetch('/save_sujet', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: currentSujetId,
+                    user_notes: userNotesTextarea.value,
+                    user_tags: userTagsInput.value,
+                    action: actionType
+                })
+            });
+
+            const data = await response.json();
+            if (data.status === 'success') {
+                loadNextSujet();
+            } else {
+                alert('Error saving sujet: ' + (data.message || 'Unknown error'));
+            }
+        } catch (error) {
+            alert('Network error: ' + error.message);
+        }
+    }
+
+    // --- Initialize the App ---
+    function initializeApp() {
+        // Initialize UI
+        renderToggles(tagTogglesDiv, predefinedTags, 'tag');
+        renderToggles(personTogglesDiv, predefinedPeople, 'person');
+        updateToggleAppearance();
+        updateSujetCount();
+        
+        // Set initial filter state
+        activeFilterState = {
+            tags: predefinedTags.map(t => t.toLowerCase()),
+            people: predefinedPeople.map(p => p.toLowerCase())
+        };
+
+        // Load first sujet
+        loadNextSujet();
+    }
+
+    // --- Event Listeners ---
+    saveButton.addEventListener('click', () => handleSujetAction('enriched'));
+    skipButton.addEventListener('click', () => handleSujetAction('skipped'));
+    deleteButton.addEventListener('click', handleDeleteSujet);
+    reverseSortButton.addEventListener('click', handleReverseSort);
+    quickSparkButton.addEventListener('click', handleQuickSpark);
+
+    backButton.addEventListener('click', () => {
+        if (history.length > 1) {
+            history.pop();
+            const previousSujetId = history[history.length - 1];
+            loadSujetById(previousSujetId);
+        } else {
+            backButton.disabled = true;
+        }
+    });
+
+    // Initialize the app
+    initializeApp();
+});

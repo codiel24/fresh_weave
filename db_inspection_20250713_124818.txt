@@ -1,0 +1,47 @@
+Connecting to database at: c:\Users\danie\Documents\Die Schlange\Weave\instance\sujets.db
+
+=== DATABASE STATISTICS ===
+Total sujets in database: 480
+ID range: 4 to 557
+Sujets without dates: 0
+
+=== SPECIFIC ID ANALYSIS ===
+Specific IDs mentioned in the issue:
+  ID: 297, Date: 13.08.20
+  ID: 328, Date: 13.09.20
+  ID: 441, Date: 31.12.20
+  ID: 455, Date: 13.01.21
+  ID: 456, Date: 14.01.21
+  ID: 457, Date: 15.01.21
+  ID: 549, Date: 16.04.21
+  ID: 550, Date: 17.04.21
+  ID: 551, Date: 13.07.25
+
+=== FIRST 10 SUJETS BY DATE (DESC) ===
+  ID: 441, Date: 31.12.20
+  ID: 377, Date: 31.10.20
+  ID: 315, Date: 31.08.20
+  ID: 284, Date: 31.07.20
+  ID: 221, Date: 31.05.20
+  ID: 532, Date: 31.03.21
+  ID: 138, Date: 31.03.20
+  ID: 473, Date: 31.01.21
+  ID: 51, Date: 31.01.20
+  ID: 440, Date: 30.12.20
+
+=== TESTING NAVIGATION FROM ID 551 ===
+ID 551, Date: 13.07.25
+  Back button -> ID 265, Date: 13.07.20
+  Skip button -> ID 552, Date: 13.07.25
+
+=== TESTING NAVIGATION FROM ID 550 ===
+ID 550, Date: 17.04.21
+  Back button -> ID 174, Date: 17.04.20
+
+=== TESTING NAVIGATION FROM ID 549 ===
+ID 549, Date: 16.04.21
+  Back button -> ID 173, Date: 16.04.20
+
+=== TESTING NAVIGATION FROM ID 297 ===
+ID 297, Date: 13.08.20
+  Back button -> ID 557, Date: 13.07.25

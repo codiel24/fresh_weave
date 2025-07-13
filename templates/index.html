@@ -1,0 +1,78 @@
+<!-- weave_webapp/templates/index.html (Radio Buttons & Back Button Placement) -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weave - Enrich Your Sujets</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+</head>
+<body>
+    <div class="container">
+        <div id="sujet-card" class="sujet-card">
+            <div class="sujet-header" style="margin-bottom:0.1em;">
+                <span id="display-sujet-id" class="sujet-id-display"></span>
+                <p id="original-sujet" style="display:inline;"></p>
+            </div>
+            <div class="info-line">
+                <div class="mode-toggle-container">
+                    <label><input type="radio" name="edit-mode" value="filter" checked> F</label>
+                    <label><input type="radio" name="edit-mode" value="tag"> T</label>
+                </div>
+                <span id="sujet-count-display" class="sujet-count-display"></span>
+                                <span id="status-view-compact">
+                    <button id="first-sujet-button" class="button nav-button">&laquo; First</button>
+                    <button id="last-sujet-button" class="button nav-button">Last &raquo;</button>
+                    | Status: <span id="current-status"></span> | V <strong id="view-count"></strong>
+                </span>
+            </div>
+            <!-- Content displayed when a sujet is loaded -->
+            <div id="sujet-display-area">
+                <div id="no-more-sujets" class="hidden">
+                    <p style="margin:0.2em 0 0.2em 0;">No more sujets to display. You've reached the end!</p>
+                </div>
+                <div id="sujet-content" class="hidden">
+                    <p id="ai-suggestion" style="margin:0.2em 0 0.2em 0;"></p>
+                    <div class="enrichment-area" style="margin-top:0.2em;">
+                        <label for="user-notes"></label>
+                        <textarea id="user-notes" rows="4" placeholder="Add your notes here..."></textarea>
+                        <label for="user-tags"></label>
+                        <input type="text" id="user-tags" placeholder="e.g., Travel, AI, Funny, Personal">
+                        <div id="tag-toggles"></div>
+                        <div id="person-toggles"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls independent of specific sujet content -->
+        <div id="global-controls" class="controls">
+            <div class="actions">
+                <button id="back-button" class="button">&larr;</button>
+                <button id="save-button" class="button save-button">Save</button>
+                <button id="skip-button" class="button skip-button">Skip</button>
+                <button id="delete-button" class="button delete-button">Del</button>
+                <button id="reverse-sort-button" class="button">Reverse</button>
+                <button id="quick-spark-button" class="button">Quick</button>
+            </div>
+        </div>
+
+
+    </div>
+
+        <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register("{{ url_for('static', filename='sw.js') }}")
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    }, err => {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>

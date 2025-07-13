@@ -1,0 +1,545 @@
+/* weave_webapp/static/style.css */
+body {
+    font-family: sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    background-color: #f7f7f7;
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-start;
+    min-height: 100vh;
+    width: 100vw;
+    box-sizing: border-box;
+}
+
+.container {
+    padding: 0;
+    max-width: 100vw;
+    width: 100vw;
+    text-align: left;
+    margin: 0;
+}
+
+@media (max-width: 600px) {
+  .container {
+    padding: 0;
+    max-width: 100vw;
+    min-width: 0;
+  }
+} 
+
+h1,
+h3 {
+    color: #333;
+}
+
+.sujet-card {
+    border: none;
+    border-left: 3mm solid transparent;
+    padding: 0;
+    margin-top: 0;
+    border-radius: 0;
+    background-color: #e9e9e9;
+    box-shadow: none;
+    text-align: left;
+    min-width: 0;
+}
+
+@media (max-width: 600px) {
+  .sujet-card {
+    padding: 0;
+    margin-top: 0;
+    border-radius: 0;
+  }
+}
+
+.sujet-card strong {
+    color: #555;
+}
+
+.sujet-header {
+    margin-bottom: 0.25em;
+}
+
+.info-line {
+    display: flex;
+    align-items: center;
+    gap: 0.6em;
+    margin-bottom: 0.2em;
+    font-size: 0.98em;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 600px) {
+  .info-line {
+    gap: 0.3em;
+    font-size: 0.92em;
+    margin-bottom: 0.1em;
+  }
+}
+
+.mode-toggle-container label {
+    margin-right: 0.5em;
+    font-size: 1em;
+}
+
+.sujet-count-display {
+    font-size: 1em;
+    color: #444;
+    font-weight: normal;
+    margin-right: 0.5em;
+}
+
+#status-view-compact {
+    font-size: 1em;
+    color: #666;
+    font-weight: normal;
+}
+
+.sujet-id-display {
+    font-family: sans-serif;
+    font-size: 1em;
+    color: #888;
+    font-weight: normal;
+    letter-spacing: 0.5px;
+}
+#original-sujet {
+    font-family: sans-serif;
+    font-size: 1.35em;
+    font-weight: bold;
+    color: #333;
+    margin: 0;
+    padding: 0;
+    display: inline;
+    line-height: 1.1;
+}
+
+
+.user-inputs {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #ddd;
+}
+
+.user-inputs label {
+    display: block;
+    /* Labels on their own line */
+    margin-bottom: 5px;
+    margin-top: 10px;
+    font-weight: bold;
+    color: #333;
+}
+
+.user-inputs textarea,
+.user-inputs input[type="text"] {
+    width: calc(100% - 22px);
+    /* Account for padding and border */
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    /* More subtle border */
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+/* Style for Vibe Select (Dropdown - if used) */
+#vibe-select {
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    font-size: 1rem;
+    margin-bottom: 10px;
+    display: block;
+    /* Put it on its own line */
+    width: calc(100% - 18px);
+    /* Adjust width */
+}
+
+/* weave_webapp/static/style.css (Additions for Radio Buttons) */
+
+/* Style for Vibe Radio Container */
+#vibe-radios {
+    margin-top: 5px;
+    margin-bottom: 10px;
+    text-align: left;
+}
+
+/* Style for individual radio button/label pairs */
+#vibe-radios input[type="radio"] {
+    margin-right: 5px; /* Space between radio and label */
+    vertical-align: middle; /* Align radio button vertically with text */
+}
+
+#vibe-radios label {
+    margin-right: 15px; /* Space between different vibe options */
+    font-weight: normal; /* Labels for radios don't need to be bold like field labels */
+    display: inline-block; /* Allow multiple on a line */
+    cursor: pointer; /* Indicate they are clickable */
+}
+
+#vibe-radios label:hover {
+    color: #555; /* Subtle hover effect */
+}
+
+/* Remove margin bottom from the general label rule if it affects radio labels poorly */
+/* Or refine label rule specifically */
+.user-inputs > label:not([for^="vibe-"]) { /* Target labels directly within user-inputs, excluding vibe labels */
+    display: block;
+    margin-bottom: 5px;
+    margin-top: 10px;
+    font-weight: bold;
+    color: #333;
+}
+
+/* Style for Tag Toggles Container */
+#tag-toggles {
+    margin-top: 2px;
+    border-top: none;
+    padding-top: 0;
+    text-align: left;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    justify-content: flex-start;
+    min-width: 0;
+}
+
+@media (max-width: 600px) {
+  #tag-toggles {
+    gap: 2px;
+    margin-top: 0;
+    padding-top: 0;
+    min-width: 0;
+  }
+}
+
+/* Style for individual Tag and Person Toggle Buttons */
+.tag-toggle,
+.person-toggle {
+    padding: 2px 8px;
+    margin: 2px 2px 2px 0;
+    background-color: #e0e0e0;
+    color: #333;
+    border: 1px solid #ccc;
+    border-radius: 14px;
+    cursor: pointer;
+    font-size: 0.82rem;
+    transition: background-color 0.2s, border-color 0.2s;
+    display: inline-block;
+    min-width: 38px;
+    min-height: 32px;
+    line-height: 1.1;
+    touch-action: manipulation;
+}
+
+@media (max-width: 600px) {
+  .tag-toggle, .person-toggle {
+    font-size: 0.92rem;
+    min-width: 34px;
+    min-height: 28px;
+    padding: 2px 6px;
+    margin: 2px 2px 2px 0;
+  }
+}
+
+.tag-toggle:hover,
+.person-toggle:hover {
+    background-color: #d5d5d5;
+}
+
+.tag-toggle.active,
+.person-toggle.active {
+    background-color: #007bff;
+    /* Primary blue when active */
+    color: white;
+    border-color: #007bff;
+}
+
+.tag-toggle.active:hover,
+.person-toggle.active:hover {
+    background-color: #0056b3;
+    border-color: #0056b3;
+}
+
+button {
+    padding: 10px 15px;
+    margin-right: 10px;
+    background-color: #5cb85c;
+    /* Green save button */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.2s ease;
+}
+
+button:hover {
+    background-color: #4cae4c;
+}
+
+#skip-button {
+    background-color: #f0ad4e;
+    /* Orange skip button */
+}
+
+#skip-button:hover {
+    background-color: #ec971f;
+}
+
+.toggle-header {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-bottom: 1px;
+    margin-top: 2px;
+    min-width: 0;
+}
+
+@media (max-width: 600px) {
+  .toggle-header {
+    margin-bottom: 0;
+    margin-top: 0.5vw;
+    min-width: 0;
+  }
+}
+
+.toggle-header span,
+.toggle-header label {
+    font-weight: bold;
+    margin-right: 10px; /* Space next to the label */
+}
+
+.select-all-button {
+    padding: 3px 8px;
+    font-size: 0.8em;
+    background-color: #e0e0e0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: auto; /* Pushes the button to the right if space allows */
+}
+
+.select-all-button:hover {
+    background-color: #d0d0d0;
+}
+
+/* Style for Back button */
+#back-button {
+    background-color: #6c757d;
+    /* Grey color */
+    /* margin-left: 10px; Removed to allow flex to space items */
+    /* Space from Save/Skip */
+}
+
+#back-button:hover {
+    background-color: #5a6268;
+}
+
+#back-button:disabled {
+    background-color: #cccccc;
+    /* Lighter grey when disabled */
+    cursor: not-allowed;
+}
+
+/* Add space below buttons (Already present, keeping it) */
+/* button {
+    margin-bottom: 10px;
+} */
+
+#sujet-display-area {
+    min-height: unset;
+    padding: 0;
+    margin-bottom: 0.2em;
+}
+
+@media (max-width: 600px) {
+  #sujet-display-area {
+    margin-bottom: 0.1em;
+    padding: 0;
+  }
+}
+
+#sujet-content h2 {
+    margin-top: 0;
+    color: #333;
+}
+
+#original-sujet {
+  font-family: sans-serif;
+  font-size: 1em;
+  font-weight: bold;
+  color: #333;
+  margin: 0;
+  padding: 0;
+  display: inline;
+  line-height: 1.1;
+}
+
+#ai-suggestion {
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  color: #333;
+  margin-bottom: 15px;
+  line-height: 1.6;
+  max-height: 150px;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+.sujet-metadata {
+    margin-top: 5px; /* Reduced top margin */
+    margin-bottom: 10px; /* Reduced bottom margin */
+    padding: 5px 0; /* Reduced padding, removed side padding */
+    font-size: 0.9em; /* Keep font size adjustment */
+    color: #555;
+}
+
+#status-view-compact {
+    display: block; /* Or inline-block if preferred, block makes it take full width */
+    text-align: left; /* Or center/right as you prefer */
+}
+
+.enrichment-area label {
+    display: none; /* Hide labels as they are now empty */
+}
+
+textarea,
+input[type="text"] {
+    width: 100%;
+    padding: 7px 6px;
+    margin-bottom: 6px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+    background-color: #fdfdfd;
+    box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+  textarea,
+  input[type="text"] {
+    padding: 6px 3px;
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+}
+
+#tag-toggles {
+    margin-top: 10px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.tag-toggle {
+    padding: 6px 12px;
+    border: 1px solid #007bff;
+    background-color: #fff;
+    color: #007bff;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    font-size: 0.85em;
+}
+
+.tag-toggle.active {
+    background-color: #007bff;
+    color: #fff;
+}
+
+.tag-toggle:hover {
+    background-color: #0056b3;
+    color: #fff;
+    border-color: #0056b3;
+}
+
+.controls {
+    margin-top: 20px;
+    text-align: center; /* Center the buttons within this div */
+}
+
+.actions {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+    flex-wrap: wrap;
+    margin-top: 0.3em;
+    margin-bottom: 0.1em;
+}
+
+@media (max-width: 600px) {
+  .actions {
+    gap: 2px;
+    margin-top: 0.1em;
+    margin-bottom: 0.1em;
+  }
+}
+
+.button {
+    padding: 10px 18px;
+    font-size: 1em;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out;
+    background-color: #6c757d; /* Default grey */
+    color: white;
+}
+
+.button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.save-button {
+    background-color: #28a745; /* Green */
+}
+.save-button:hover:not(:disabled) {
+    background-color: #218838;
+}
+
+.skip-button {
+    background-color: #ffc107; /* Yellow */
+    color: #212529;
+}
+.skip-button:hover:not(:disabled) {
+    background-color: #e0a800;
+}
+
+.delete-button {
+    background-color: #dc3545; /* Red */
+}
+.delete-button:hover:not(:disabled) {
+    background-color: #c82333;
+}
+
+#back-button {
+    background-color: #17a2b8; /* Teal */
+}
+#back-button:hover:not(:disabled) {
+    background-color: #138496;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Styling for the 'No more sujets' message area */
+#no-more-sujets {
+    padding: 20px;
+    text-align: center;
+    font-size: 1.1em;
+    color: #555;
+    background-color: #f0f0f0;
+    border-radius: 5px;
+}
+
+/* Ensure the global controls div is always visible and at the bottom of the card content */
+#global-controls {
+    padding-top: 15px; /* Add some space above the buttons */
+    border-top: 1px solid #eee; /* Optional: a separator line */
+}

@@ -1,0 +1,44 @@
+Connecting to database at: c:\Users\danie\Documents\Die Schlange\Weave\instance\sujets.db
+
+=== DATABASE STATISTICS ===
+Total sujets in database: 480
+ID range: 4 to 557
+Sujets without dates: 0
+
+=== SPECIFIC ID ANALYSIS ===
+Specific IDs mentioned in the issue:
+  ID: 297, Date: 13.08.20
+  ID: 328, Date: 13.09.20
+  ID: 441, Date: 31.12.20
+  ID: 455, Date: 13.01.21
+  ID: 456, Date: 14.01.21
+  ID: 457, Date: 15.01.21
+  ID: 549, Date: 16.04.21
+  ID: 550, Date: 17.04.21
+  ID: 551, Date: 13.07.25
+
+=== FIRST 10 SUJETS BY DATE (DESC) ===
+  ID: 441, Date: 31.12.20
+  ID: 377, Date: 31.10.20
+  ID: 315, Date: 31.08.20
+  ID: 284, Date: 31.07.20
+  ID: 221, Date: 31.05.20
+  ID: 532, Date: 31.03.21
+  ID: 138, Date: 31.03.20
+  ID: 473, Date: 31.01.21
+  ID: 51, Date: 31.01.20
+  ID: 440, Date: 30.12.20
+
+=== TESTING NAVIGATION FROM ID 551 ===
+ID 551, Date: 13.07.25
+Error inspecting database: 'charmap' codec can't encode character '\u2192' in position 14: character maps to <undefined>
+
+
+=== ERRORS ===
+Traceback (most recent call last):
+  File "c:\Users\danie\Documents\Die Schlange\Weave\inspect_db.py", line 90, in inspect_database
+    print(f"  Back button \u2192 ID {back_result['id']}, Date: {back_result['date_created']}")
+  File "C:\Users\danie\AppData\Local\Programs\Python\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2192' in position 14: character maps to <undefined>
