@@ -14,6 +14,7 @@
             <div class="sujet-header" style="margin-bottom:0.1em;">
                 <span id="display-sujet-id" class="sujet-id-display"></span>
                 <p id="original-sujet" style="display:inline;"></p>
+                <button id="edit-title-button" class="button edit-button" title="Edit Title">✎</button>
             </div>
             <div class="info-line">
                 <div class="mode-toggle-container">
@@ -21,10 +22,11 @@
                     <label><input type="radio" name="edit-mode" value="tag"> T</label>
                 </div>
                 <span id="sujet-count-display" class="sujet-count-display"></span>
-                                <span id="status-view-compact">
+                <span id="status-view-compact">
                     <button id="first-sujet-button" class="button nav-button">&laquo; First</button>
                     <button id="last-sujet-button" class="button nav-button">Last &raquo;</button>
                     | Status: <span id="current-status"></span> | V <strong id="view-count"></strong>
+                    | Created: <span id="date-created"></span>
                 </span>
             </div>
             <!-- Content displayed when a sujet is loaded -->
@@ -53,11 +55,35 @@
                 <button id="save-button" class="button save-button">Save</button>
                 <button id="skip-button" class="button skip-button">Skip</button>
                 <button id="delete-button" class="button delete-button">Del</button>
-                <button id="reverse-sort-button" class="button">Reverse</button>
+                <button id="sort-order-button" class="button">Sort: <span id="sort-direction">ASC</span></button>
                 <button id="quick-spark-button" class="button">Quick</button>
+                <button id="new-sujet-button" class="button">+ New</button>
+                <button id="favorite-button" class="button favorite-button">☆</button>
             </div>
         </div>
 
+        <!-- Title Edit Container (initially hidden) -->
+        <div id="edit-title-container" class="edit-title-container hidden">
+            <input type="text" id="edit-title-input" placeholder="Edit title...">
+            <button id="save-title-button" class="button save-button">Save</button>
+            <button id="cancel-title-button" class="button">Cancel</button>
+        </div>
+
+        <!-- Modal for creating new sujets -->
+        <div id="new-sujet-modal" class="modal hidden">
+            <div class="modal-content">
+                <span id="close-modal" class="close-button">&times;</span>
+                <h2>Add New Sujet</h2>
+                <div class="modal-form">
+                    <label for="new-sujet-title">Title:</label>
+                    <input type="text" id="new-sujet-title" placeholder="Enter sujet title...">
+                    <div class="modal-buttons">
+                        <button id="create-sujet-button" class="button save-button">Create</button>
+                        <button id="cancel-sujet-button" class="button">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
     </div>
 

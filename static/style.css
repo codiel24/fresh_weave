@@ -543,3 +543,172 @@ input[type="text"] {
     padding-top: 15px; /* Add some space above the buttons */
     border-top: 1px solid #eee; /* Optional: a separator line */
 }
+
+/* Modal Dialog Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    overflow: auto;
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal:not(.hidden) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: auto;
+    padding: 20px;
+    border: 1px solid #888;
+    border-radius: 5px;
+    width: 80%;
+    max-width: 500px;
+    position: relative;
+}
+
+.close-button {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    position: absolute;
+    top: 10px;
+    right: 15px;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: black;
+    text-decoration: none;
+}
+
+.modal h2 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.modal-form {
+    margin-top: 15px;
+}
+
+.modal-form label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.modal-form input[type="text"] {
+    width: calc(100% - 22px);
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+/* Make sure the new-sujet-button has the same styling as other action buttons */
+#new-sujet-button {
+    background-color: #28a745;
+}
+
+#new-sujet-button:hover {
+    background-color: #218838;
+}
+
+/* Mobile optimizations for modal */
+@media (max-width: 600px) {
+    .modal-content {
+        width: 90%;
+        padding: 15px;
+    }
+    
+    .modal-form input[type="text"] {
+        font-size: 16px; /* Prevent zoom on focus in iOS */
+    }
+}
+
+/* Favorite button styles */
+#favorite-button {
+    background-color: #6c757d;
+    font-size: 1.2rem;
+    padding: 8px 12px;
+}
+
+#favorite-button:hover {
+    background-color: #5a6268;
+}
+
+.favorite-active {
+    color: #ffc107;
+}
+
+/* Title edit container styles */
+.edit-title-container {
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.edit-title-container.hidden {
+    display: none;
+}
+
+#edit-title-input {
+    flex-grow: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+#save-title-button,
+#cancel-title-button {
+    padding: 8px 12px;
+}
+
+/* Edit title button styles */
+#edit-title-button {
+    background-color: transparent;
+    color: #6c757d;
+    font-size: 0.9rem;
+    padding: 2px 6px;
+    margin-left: 8px;
+    border: none;
+    vertical-align: middle;
+}
+
+#edit-title-button:hover {
+    color: #495057;
+    background-color: #e9ecef;
+    border-radius: 4px;
+}
+
+/* Sort direction styling */
+#sort-direction {
+    font-weight: bold;
+}

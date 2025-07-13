@@ -1,7 +1,5 @@
 // weave_webapp/static/script.js
 
-// weave_webapp/static/script.js
-
 document.addEventListener('DOMContentLoaded', () => {
     // Aggressive cleanup for old static "All" buttons from cached HTML
     let oldBtnTag = document.getElementById('select-all-tags');
@@ -23,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- DOM Elements ---
     const originalSujetSpan = document.getElementById('original-sujet');
-const displaySujetIdSpan = document.getElementById('display-sujet-id'); // Added for separate ID display
+    const displaySujetIdSpan = document.getElementById('display-sujet-id'); // Added for separate ID display
     const aiSuggestionSpan = document.getElementById('ai-suggestion');
     const viewCountSpan = document.getElementById('view-count');
     const currentStatusSpan = document.getElementById('current-status');
@@ -38,13 +36,28 @@ const displaySujetIdSpan = document.getElementById('display-sujet-id'); // Added
     const skipButton = document.getElementById('skip-button');
     const backButton = document.getElementById('back-button');
     const deleteButton = document.getElementById('delete-button');
-    const reverseSortButton = document.getElementById('reverse-sort-button');
-        const quickSparkButton = document.getElementById('quick-spark-button');
+    const sortOrderButton = document.getElementById('sort-order-button');
+    const sortDirectionSpan = document.getElementById('sort-direction');
+    const quickSparkButton = document.getElementById('quick-spark-button');
+    const favoriteButton = document.getElementById('favorite-button');
     const firstSujetButton = document.getElementById('first-sujet-button');
     const lastSujetButton = document.getElementById('last-sujet-button');
+    const editTitleButton = document.getElementById('edit-title-button');
+    const editTitleContainer = document.getElementById('edit-title-container');
+    const editTitleInput = document.getElementById('edit-title-input');
+    const saveTitleButton = document.getElementById('save-title-button');
+    const cancelTitleButton = document.getElementById('cancel-title-button');
 
     const sujetContentDiv = document.getElementById('sujet-content');
     const noMoreSujetsDiv = document.getElementById('no-more-sujets');
+
+    // --- DOM Elements for New Sujet Modal ---
+    const newSujetButton = document.getElementById('new-sujet-button');
+    const newSujetModal = document.getElementById('new-sujet-modal');
+    const closeModalButton = document.getElementById('close-modal');
+    const newSujetTitleInput = document.getElementById('new-sujet-title');
+    const createSujetButton = document.getElementById('create-sujet-button');
+    const cancelSujetButton = document.getElementById('cancel-sujet-button');
 
     // --- State Variables ---
     let currentSujetId = null;
@@ -78,10 +91,10 @@ const displaySujetIdSpan = document.getElementById('display-sujet-id'); // Added
         'Sports', 'Travel', 'Food & Drink', 'Observation', 'Quote', 'People', 'Idea/Project'
     ];
     // Abbreviation for people toggles
-const personAbbreviations = {
-    'work': 'wrk'
-};
-const predefinedPeople = ['S', 'Fam', 'Stef', 'MD', 'AK', 'ML', 'work'];
+    const personAbbreviations = {
+        'work': 'wrk'
+    };
+    const predefinedPeople = ['S', 'Fam', 'Stef', 'MD', 'AK', 'ML', 'work'];
 
     // --- Utility Functions ---
 
@@ -91,7 +104,7 @@ const predefinedPeople = ['S', 'Fam', 'Stef', 'MD', 'AK', 'ML', 'work'];
         deleteButton.disabled = !sujetIsLoaded;
         backButton.disabled = currentHistoryLength <= 1;
         quickSparkButton.disabled = false; // Always enabled
-        reverseSortButton.disabled = false; // Always enabled
+        sortOrderButton.disabled = false; // Always enabled
         // Add any other global buttons here if their state depends on sujetIsLoaded or history
     }
 
@@ -201,13 +214,57 @@ const predefinedPeople = ['S', 'Fam', 'Stef', 'MD', 'AK', 'ML', 'work'];
         } else { // 'tag' mode
             if (!currentSujetData) return;
             const sujetTags = parseCsvString(userTagsInput.value);
-            const sujetPeople = parseCsvString(currentSujetData.person);
+            let sujetPeople = parseCsvString(currentSujetData.person);
+            // Default to all people if none assigned in tag mode
+            if (sujetPeople.length === 0) sujetPeople = predefinedPeople.map(p => p.toLowerCase());
             document.querySelectorAll('.tag-toggle').forEach(btn => {
                 btn.classList.toggle('active', sujetTags.includes(btn.dataset.value));
             });
             document.querySelectorAll('.person-toggle').forEach(btn => {
                 btn.classList.toggle('active', sujetPeople.includes(btn.dataset.value));
             });
+        }
+    }
+
+    function updateFavoriteButtonState() {
+        if (!currentSujetData) return;
+        
+        const sujetTags = parseCsvString(userTagsInput.value);
+        const isFavorite = sujetTags.includes('fav');
+        
+        // Update button appearance
+        if (isFavorite) {
+            favoriteButton.textContent = '★'; // Filled star
+            favoriteButton.classList.add('favorite-active');
+        } else {
+            favoriteButton.textContent = '☆'; // Empty star
+            favoriteButton.classList.remove('favorite-active');
+        }
+    }
+
+    function toggleFavorite() {
+        if (!currentSujetData) return;
+        
+        const sujetTags = parseCsvString(userTagsInput.value);
+        const favIndex = sujetTags.indexOf('fav');
+        
+        if (favIndex !== -1) {
+            // Remove 'fav' tag
+            sujetTags.splice(favIndex, 1);
+        } else {
+            // Add 'fav' tag
+            sujetTags.push('fav');
+        }
+        
+        // Update the tags input field
+        userTagsInput.value = sujetTags.join(', ');
+        
+        // Update button appearance
+        updateFavoriteButtonState();
+        
+        // Update tag toggles if in tag mode
+        if (editMode === 'tag') {
+            updateToggleAppearance();
         }
     }
 
@@ -231,7 +288,27 @@ const predefinedPeople = ['S', 'Fam', 'Stef', 'MD', 'AK', 'ML', 'work'];
         userNotesTextarea.value = sujet.user_notes || '';
         userTagsInput.value = sujet.user_tags || '';
 
+        // Display date_created if available
+        const dateCreatedSpan = document.getElementById('date-created');
+        if (dateCreatedSpan) {
+            if (sujet.date_created) {
+                // Convert from YYYY-MM-DD to yy.mm.dd format
+                const dateParts = sujet.date_created.split('-');
+                if (dateParts.length === 3) {
+                    const year = dateParts[0].substring(2); // Get last 2 digits of year
+                    const month = dateParts[1];
+                    const day = dateParts[2];
+                    dateCreatedSpan.textContent = `${day}.${month}.${year}`;
+                } else {
+                    dateCreatedSpan.textContent = sujet.date_created;
+                }
+            } else {
+                dateCreatedSpan.textContent = 'N/A';
+            }
+        }
+
         updateToggleAppearance();
+        updateFavoriteButtonState();
 
         noMoreSujetsDiv.classList.add('hidden');
         sujetContentDiv.classList.remove('hidden');
@@ -258,8 +335,12 @@ const predefinedPeople = ['S', 'Fam', 'Stef', 'MD', 'AK', 'ML', 'work'];
     async function updateSujetCount() {
         const filters = getActiveFiltersForQuery();
         let queryParams = [];
-        if (filters.tags) queryParams.push(`tags=${encodeURIComponent(filters.tags)}`);
-        if (filters.people) queryParams.push(`people=${encodeURIComponent(filters.people)}`);
+        if (filters.tags && filters.tags.length > 0) {
+            queryParams.push(`tags=${filters.tags.map(encodeURIComponent).join(',')}`);
+        }
+        if (filters.people && filters.people.length > 0) {
+            queryParams.push(`people=${filters.people.map(encodeURIComponent).join(',')}`);
+        }
         const queryString = queryParams.join('&');
         let filteredCount = 0;
         let totalCount = 0;
@@ -284,170 +365,41 @@ const predefinedPeople = ['S', 'Fam', 'Stef', 'MD', 'AK', 'ML', 'work'];
     }
 
     async function loadNextSujet() {
+        // Get the active filters
         const filters = getActiveFiltersForQuery();
-        let queryParams = [`offset=${currentOffset}`];
-        if (filters.tags.length > 0) {
-            queryParams.push(`tags=${filters.tags.map(encodeURIComponent).join(',')}`);
-        }
-        if (filters.people.length > 0) {
-            queryParams.push(`people=${filters.people.map(encodeURIComponent).join(',')}`);
-        }
-        const queryString = queryParams.join('&');
+        
+        // Build the query string for the request
+        const queryParams = [`offset=${currentOffset}`];
+        if (filters.tags.length) queryParams.push(`tags=${filters.tags.map(encodeURIComponent).join(',')}`);
+        if (filters.people.length) queryParams.push(`people=${filters.people.map(encodeURIComponent).join(',')}`);
 
-        console.log(`--- DEBUG (loadNextSujet): Mode: ${editMode}, Query: /get_sujet?${queryString} ---`);
+        try {
+            const response = await fetch(`/get_sujet?${queryParams.join('&')}`);
+            const data = await response.json();
 
-    const activeTags = Array.from(tagTogglesDiv.querySelectorAll('.tag-toggle.active')).map(btn => {
-        // Use the full name from the title if it exists (for abbreviations), otherwise use textContent
-        return btn.title || btn.textContent.trim();
-    });
-
-    const activePeople = Array.from(personTogglesDiv.querySelectorAll('.person-toggle.active')).map(btn => {
-        return btn.title || btn.textContent.trim();
-    });
-
-    userTagsInput.value = activeTags.join(', ');
-    currentSujetData.person = activePeople.join(', ');
-}
-
-function updateToggleAppearance() {
-    if (editMode === 'filter') {
-        document.querySelectorAll('.tag-toggle').forEach(btn => {
-            btn.classList.toggle('active', activeFilterState.tags.includes(btn.dataset.value));
-        });
-        document.querySelectorAll('.person-toggle').forEach(btn => {
-            btn.classList.toggle('active', activeFilterState.people.includes(btn.dataset.value));
-        });
-    } else { // 'tag' mode
-        if (!currentSujetData) return;
-        const sujetTags = parseCsvString(userTagsInput.value);
-        const sujetPeople = parseCsvString(currentSujetData.person);
-        document.querySelectorAll('.tag-toggle').forEach(btn => {
-            btn.classList.toggle('active', sujetTags.includes(btn.dataset.value));
-        });
-        document.querySelectorAll('.person-toggle').forEach(btn => {
-            btn.classList.toggle('active', sujetPeople.includes(btn.dataset.value));
-        });
-    }
-}
-
-function displaySujet(sujet) {
-    currentSujetId = sujet.id;
-    currentSujetData = sujet;
-    // Parse ID and Title from sujet.original_sujet (e.g., "ID: 123 - Title Text")
-    const match = sujet.original_sujet.match(/^ID:\s*(\d+)\s*-\s*(.*)$/);
-    if (match && match[1] && match[2]) {
-        displaySujetIdSpan.textContent = match[1]; // Just the ID number
-        originalSujetSpan.textContent = match[2]; // Just the Title text
-    } else {
-        // Fallback if parsing fails, though this shouldn't happen with consistent data
-        displaySujetIdSpan.textContent = sujet.id; // Use sujet.id as a fallback for the number
-        originalSujetSpan.textContent = sujet.original_sujet; // Show the original string as fallback title
-    }
-
-    aiSuggestionSpan.textContent = sujet.ai_suggestion;
-    viewCountSpan.textContent = sujet.view_count;
-    currentStatusSpan.textContent = sujet.status;
-    userNotesTextarea.value = sujet.user_notes || '';
-    userTagsInput.value = sujet.user_tags || '';
-
-    updateToggleAppearance();
-
-    noMoreSujetsDiv.classList.add('hidden');
-    sujetContentDiv.classList.remove('hidden');
-    saveButton.disabled = false;
-    skipButton.disabled = false;
-    deleteButton.disabled = false;
-    updateGlobalButtonStates(true, history.length);
-}
-
-function getActiveFiltersForQuery() {
-    if (editMode === 'filter') {
-        return {
-            tags: activeFilterState.tags,
-            people: activeFilterState.people
-        };
-    } else { // 'tag' mode or any other mode
-        return {
-            tags: [],  // Send empty array to not filter by tags
-            people: [] // Send empty array to not filter by people
-        };
-    }
-}
-
-async function updateSujetCount() {
-    const filters = getActiveFiltersForQuery();
-    let queryParams = [];
-    if (filters.tags && filters.tags.length > 0) {
-        queryParams.push(`tags=${filters.tags.map(encodeURIComponent).join(',')}`);
-    }
-    if (filters.people && filters.people.length > 0) {
-        queryParams.push(`people=${filters.people.map(encodeURIComponent).join(',')}`);
-    }
-    const queryString = queryParams.join('&');
-    let filteredCount = 0;
-    let totalCount = 0;
-
-    try {
-        const response = await fetch(`/get_sujets_count?${queryString}`);
-        const data = await response.json();
-        filteredCount = data.status === 'ok' ? data.count : 0;
-    } catch (error) {
-        console.error('Network error fetching filtered sujet count:', error);
-    }
-
-    try {
-        const totalResponse = await fetch(`/get_sujets_count`);
-        const totalData = await totalResponse.json();
-        totalCount = totalData.status === 'ok' ? totalData.count : 0;
-    } catch (error) {
-        console.error('Network error fetching total sujet count:', error);
-    }
-    
-    sujetCountDisplay.textContent = `${filteredCount} / ${totalCount}`;
-}
-
-async function loadNextSujet() {
-    const filters = getActiveFiltersForQuery();
-    let queryParams = [`offset=${currentOffset}`];
-    if (filters.tags.length > 0) {
-        queryParams.push(`tags=${filters.tags.map(encodeURIComponent).join(',')}`);
-    }
-    if (filters.people.length > 0) {
-        queryParams.push(`people=${filters.people.map(encodeURIComponent).join(',')}`);
-    }
-    const queryString = queryParams.join('&');
-
-    console.log(`--- DEBUG (loadNextSujet): Mode: ${editMode}, Query: /get_sujet?${queryString} ---`);
-
-    try {
-        const response = await fetch(`/get_sujet?${queryString}`);
-        const data = await response.json();
-
-        if (data.status === 'no_more_sujets') {
-            if (editMode === 'filter') {
-                // Keep panel visible so the user can adjust filters
-                sujetContentDiv.classList.remove('hidden');
+            if (data.status === 'ok' && data.sujet) {
+                // Always add the sujet to history, even if it's the first one
+                history.push(data.sujet.id);
+                if (history.length > historySize) history.shift();
+                
+                currentSujetData = data.sujet;
+                currentSujetId = data.sujet.id;
+                displaySujet(data.sujet);
+                
+                // Update back button state
+                backButton.disabled = history.length <= 1;
+                
+                // Increment offset for next fetch
+                currentOffset++;
+            } else if (data.status === 'no_more_sujets') {
+                handleLoadError('No more sujets match your current filters.');
             } else {
-                sujetContentDiv.classList.add('hidden');
+                handleLoadError(`Error loading sujet: ${data.message || 'Unknown error'}`);
             }
-            noMoreSujetsDiv.classList.remove('hidden');
-            const message = editMode === 'filter' ? 'No more sujets matching your filters.' : 'You have reached the end of the list.';
-            noMoreSujetsDiv.textContent = message;
-            saveButton.disabled = true;
-            skipButton.disabled = true;
-            deleteButton.disabled = true;
-            currentSujetId = null;
-            updateGlobalButtonStates(false, history.length);
-        } else if (data.status === 'ok' && data.sujet) {
-            displaySujet(data.sujet);
-            currentOffset++;
-        } else {
-            handleLoadError("Error loading sujet: " + (data.message || "Unknown error"));
+        } catch (error) {
+            handleLoadError(`Network error: ${error.message}`);
         }
-    } catch (error) {
-        handleLoadError("Network Error: " + error.message);
     }
-}
     
     function handleLoadError(message) {
         sujetContentDiv.classList.add('hidden');
@@ -455,7 +407,7 @@ async function loadNextSujet() {
         noMoreSujetsDiv.classList.remove('hidden');
         saveButton.disabled = true;
         skipButton.disabled = true;
-        // backButton, quickSparkButton, and reverseSortButton remain conditionally enabled
+        // backButton, quickSparkButton, and sortOrderButton remain conditionally enabled
         backButton.disabled = history.length <= 1;
         currentSujetId = null;
         // deleteButton is handled by updateGlobalButtonStates
@@ -463,81 +415,159 @@ async function loadNextSujet() {
     }
 
     async function loadSujetById(id) {
-        if (id === null) return;
+        if (!id) return;
+        console.log(`--- DEBUG (loadSujetById): Loading sujet by ID: ${id} ---`);
         try {
             const response = await fetch(`/get_sujet_by_id/${id}`);
             const data = await response.json();
             if (data.status === 'ok' && data.sujet) {
+                // When going 'back', the history is managed by the backButton listener.
+                // We do NOT push to history here, as it would create duplicates.
                 displaySujet(data.sujet);
             } else {
-                handleLoadError(`Error loading sujet ID ${id}: ` + (data.message || "Unknown error"));
+                handleLoadError(`Could not load sujet with ID ${id}. It may have been deleted.`);
             }
         } catch (error) {
-            handleLoadError(`Network Error loading sujet ID ${id}: ` + error.message);
+            handleLoadError(`Network error loading sujet ID ${id}: ${error.message}`);
+        }
+    }
+
+    async function loadAdjacentSujet(direction = 'next') {
+        if (!currentSujetId) {
+            console.warn('loadAdjacentSujet called but currentSujetId is null');
+            return;
+        }
+
+        const filters = getActiveFiltersForQuery();
+        const qp = [
+            `id=${currentSujetId}`,
+            `direction=${direction}`
+        ];
+        if (filters.tags.length) qp.push(`tags=${filters.tags.map(encodeURIComponent).join(',')}`);
+        if (filters.people.length) qp.push(`people=${filters.people.map(encodeURIComponent).join(',')}`);
+
+        try {
+            const res = await fetch(`/adjacent_sujet?${qp.join('&')}`);
+            const data = await res.json();
+
+            if (data.status === 'ok' && data.sujet) {
+                // Add to history if this is a new sujet
+                if (history.length === 0 || history[history.length - 1] !== data.sujet.id) {
+                    history.push(data.sujet.id);
+                    if (history.length > historySize) history.shift();
+                } else if (history.length === 0) {
+                    history.push(data.sujet.id);
+                }
+                
+                displaySujet(data.sujet);
+                
+                // Update back button state
+                backButton.disabled = history.length <= 1;
+                
+                // Increment offset for next fetch
+                currentOffset++;
+            } else if (data.status === 'no_more_sujets') {
+                // Wrap around to first or last depending on direction
+                const edge = direction === 'next' ? 'first' : 'last';
+                await loadEdgeSujet(edge);
+            } else {
+                handleLoadError(`Navigation error: ${data.message || 'unknown'}`);
+            }
+        } catch (err) {
+            handleLoadError('Network error navigating: ' + err.message);
         }
     }
 
     async function loadEdgeSujet(edge) {
-        const endpoint = edge === 'first' ? '/get_first_sujet' : '/get_last_sujet';
-        console.log(`--- DEBUG (loadEdgeSujet): Fetching ${edge} sujet from ${endpoint} ---`);
-
         try {
-            const response = await fetch(endpoint);
+            // Build query string with filters if in filter mode
+            let url = `/${edge}`;
+            
+            // If in filter mode, include the active filters
+            if (editMode === 'filter') {
+                const filters = getActiveFiltersForQuery();
+                const queryParams = [];
+                
+                if (filters.tags.length) {
+                    queryParams.push(`tags=${filters.tags.map(encodeURIComponent).join(',')}`);
+                }
+                
+                if (filters.people.length) {
+                    queryParams.push(`people=${filters.people.map(encodeURIComponent).join(',')}`);
+                }
+                
+                if (queryParams.length > 0) {
+                    url += `?${queryParams.join('&')}`;
+                }
+            }
+            
+            const response = await fetch(url);
             const data = await response.json();
-
-            if (data.status === 'no_more_sujets') {
-                handleLoadError(`Could not load the ${edge} sujet. The database might be empty.`);
-            } else if (data.status === 'ok' && data.sujet) {
+            if (data.status === 'ok' && data.sujet) {
                 if (history.length === 0 || history[history.length - 1] !== data.sujet.id) {
                     history.push(data.sujet.id);
                     if (history.length > historySize) history.shift();
                 }
                 displaySujet(data.sujet);
             } else {
-                handleLoadError(`Error loading ${edge} sujet: ` + (data.message || "Unknown error"));
+                handleLoadError(`Error loading ${edge} sujet: ${data.message || 'Unknown error'}`);
             }
         } catch (error) {
-            handleLoadError(`Network Error loading ${edge} sujet: ` + error.message);
+            handleLoadError(`Network error loading ${edge} sujet: ${error.message}`);
         }
+    }
+
+    // --- Action Handlers (Save, Skip, Delete, etc.) ---
+
+    function getSelectedPeopleFromToggles() {
+        // Get all active person toggle buttons and extract their values
+        return Array.from(personTogglesDiv.querySelectorAll('.person-toggle.active')).map(btn => {
+            // Use the full name from the title if it exists (for abbreviations), otherwise use textContent
+            return btn.title || btn.textContent.trim();
+        });
     }
 
     async function handleSujetAction(actionType) {
         if (!currentSujetData) return;
         let endpoint = '';
-        let payload = { id: currentSujetData.id };
-        const actionName = actionType === 'enriched' ? 'saving' : 'skipping'; // For better error messages
+        let payload = {
+            id: currentSujetData.id,
+        };
 
         if (actionType === 'enriched') {
             endpoint = '/save_sujet';
-            payload.user_notes = userNotesTextarea.value.trim();
-            payload.user_tags = userTagsInput.value.trim();
-            payload.person = currentSujetData.person || '';
+            payload.user_notes = userNotesTextarea.value;
+            payload.user_tags = userTagsInput.value;
+            payload.person = getSelectedPeopleFromToggles().join(',');
         } else if (actionType === 'skipped') {
             endpoint = '/skip_sujet';
         } else {
-            return;
+            return; // Should not happen
         }
 
         try {
+            console.log(`--- DEBUG (handleSujetAction): Sending ${actionType} request to ${endpoint} with payload:`, payload);
             const response = await fetch(endpoint, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                },
                 body: JSON.stringify(payload),
             });
-            const data = await response.json();
-            // Accept 'ok', 'success', or 'partial_success' as valid for proceeding
-            if (response.ok && (data.status === 'ok' || data.status === 'success' || data.status === 'partial_success')) {
-                // If GSheet logging failed, we might want to inform the user but still proceed.
-                if (data.status === 'partial_success') {
-                    console.warn(`Action successful, but there was a server-side issue: ${data.message}`);
-                }
-                loadNextSujet();
-                updateSujetCount();
-            } else {
-                alert(`Error ${actionName} sujet: ${data.message || 'Unknown error'}`);
+
+            // Check if response is ok before trying to parse JSON
+            if (!response.ok) {
+                throw new Error(`Server responded with status ${response.status}`);
             }
+
+            const data = await response.json();
+            console.log(`--- DEBUG (handleSujetAction): Response received:`, data);
+
+            // After saving or skipping, always move to the next sujet in the current sort order
+            loadAdjacentSujet('next');
         } catch (error) {
-            alert(`Network error when ${actionName} sujet. Check console.`);
+            console.error(`--- ERROR (handleSujetAction): Action ${actionType} failed:`, error);
+            alert(`Action failed: ${error.message}. Please try again.`);
         }
     }
 
@@ -548,34 +578,33 @@ async function loadNextSujet() {
             return;
         }
 
-                console.log('[DEBUG] handleDeleteSujet: About to show window.confirm. Sujet:', currentSujetData.original_sujet);
+        console.log('[DEBUG] handleDeleteSujet: Proceeding with deletion for sujet:', currentSujetData.original_sujet);
 
-    // --- Event Listeners --- 
-    firstSujetButton.addEventListener('click', () => loadEdgeSujet('first'));
-    lastSujetButton.addEventListener('click', () => loadEdgeSujet('last'));
-        const userConfirmed = window.confirm(`Delete sujet: ${currentSujetData.original_sujet}?`); // Store result
-        console.log('[DEBUG] handleDeleteSujet: window.confirm result:', userConfirmed); // Log the result
-
-        if (!userConfirmed) { // Check the stored result
-            console.log('[DEBUG] handleDeleteSujet: User cancelled delete (or confirm returned false).');
-            return;
+        // Show confirmation dialog before proceeding with deletion
+        if (!confirm("Are you sure you want to delete this sujet? This action cannot be undone.")) {
+            console.log('[DEBUG] handleDeleteSujet: Deletion cancelled by user.');
+            return; // Exit if user cancels
         }
-        console.log('[DEBUG] handleDeleteSujet: User confirmed delete.');
 
         try {
             console.log('[DEBUG] handleDeleteSujet: About to fetch /delete_sujet/', currentSujetId);
             const response = await fetch(`/delete_sujet/${currentSujetId}`, { method: 'DELETE' });
-            const data = await response.json();
-            if (response.ok && data.status === 'success') {
-                const indexInHistory = history.indexOf(currentSujetId);
-                if (indexInHistory > -1) history.splice(indexInHistory, 1);
-                loadNextSujet();
-                updateSujetCount();
-            } else {
-                alert(`Error deleting sujet: ${data.message || 'Unknown error'}`);
+            
+            // Check if response is ok before trying to parse JSON
+            if (!response.ok) {
+                throw new Error(`Server responded with status ${response.status}`);
             }
+            
+            const data = await response.json();
+            console.log('[DEBUG] handleDeleteSujet: Response received:', data);
+            
+            // After deletion, move to the next sujet in the current sort order
+            const direction = sortDirectionSpan.textContent === 'ASC' ? 'next' : 'prev';
+            loadAdjacentSujet(direction);
+            updateSujetCount();
         } catch (error) {
-            alert('Network error when deleting sujet. Check console.');
+            console.error('Network error when deleting sujet:', error);
+            alert(`Failed to delete sujet: ${error.message}. Please try again.`);
         }
     }
 
@@ -597,14 +626,20 @@ async function loadNextSujet() {
         }
     }
 
-    async function handleReverseSort() {
+    async function handleSortOrderToggle() {
         try {
             const response = await fetch('/toggle_sort', { method: 'POST' });
             const result = await response.json();
             if (response.ok && result.status === 'ok') {
-                if (currentSujetId !== null) history.length = 0;
+                // Update the sort direction display
+                sortDirectionSpan.textContent = result.sort_order;
+                
+                // Provide visual feedback that sort direction changed
+                sortOrderButton.classList.add('active');
+                setTimeout(() => sortOrderButton.classList.remove('active'), 500);
+                
+                // Reset offset and reload sujets with new sort order
                 currentOffset = 0;
-                updateSujetCount();
                 loadNextSujet();
             } else {
                 alert(`Error toggling sort order: ${result.message || 'Unknown error'}`);
@@ -614,20 +649,189 @@ async function loadNextSujet() {
         }
     }
 
+    async function loadEdgeSujet(edge) {
+        try {
+            const response = await fetch(`/${edge}`);
+            const data = await response.json();
+            if (data.status === 'ok' && data.sujet) {
+                // Add to history if this is a new sujet
+                if (history.length === 0 || history[history.length - 1] !== data.sujet.id) {
+                    history.push(data.sujet.id);
+                    if (history.length > historySize) history.shift();
+                }
+                
+                currentSujetData = data.sujet;
+                currentSujetId = data.sujet.id;
+                displaySujet(data.sujet);
+                
+                // Update back button state
+                backButton.disabled = history.length <= 1;
+            } else {
+                handleLoadError(`Error loading ${edge} sujet: ${data.message || 'Unknown error'}`);
+            }
+        } catch (error) {
+            handleLoadError(`Network error loading ${edge} sujet: ${error.message}`);
+        }
+    }
+
+    function showTitleEditForm() {
+        if (!currentSujetData) return;
+        
+        // Get the current title text
+        const titleText = originalSujetSpan.textContent.trim();
+        
+        // Set the input value to the current title
+        editTitleInput.value = titleText;
+        
+        // Show the edit form, hide the title
+        originalSujetSpan.style.display = 'none';
+        editTitleContainer.classList.remove('hidden');
+        
+        // Focus the input
+        editTitleInput.focus();
+    }
+    
+    function hideTitleEditForm() {
+        originalSujetSpan.style.display = 'inline';
+        editTitleContainer.classList.add('hidden');
+    }
+    
+    function saveEditedTitle() {
+        if (!currentSujetData || !currentSujetId) return;
+        
+        const newTitle = editTitleInput.value.trim();
+        if (!newTitle) {
+            alert('Title cannot be empty');
+            return;
+        }
+        
+        // Send the updated title to the server
+        fetch(`/update_title/${currentSujetId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ title: newTitle })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to update title');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Update the displayed title
+            originalSujetSpan.textContent = newTitle;
+            
+            // Hide the edit form
+            hideTitleEditForm();
+            
+            // Update the current sujet data
+            if (currentSujetData) {
+                // Update the title part while preserving the ID prefix
+                const idPrefix = currentSujetData.original_sujet.match(/^ID:\s*(\d+)\s*-\s*/);
+                if (idPrefix && idPrefix[0]) {
+                    currentSujetData.original_sujet = idPrefix[0] + newTitle;
+                } else {
+                    currentSujetData.original_sujet = `ID: ${currentSujetId} - ${newTitle}`;
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error updating title:', error);
+            alert('Failed to update title. Please try again.');
+        });
+    }
+
+    function openNewSujetModal() {
+        // Clear previous values
+        newSujetTitleInput.value = '';
+        
+        // Show the modal
+        newSujetModal.classList.remove('hidden');
+        
+        // Focus the title input
+        newSujetTitleInput.focus();
+    }
+    
+    function closeNewSujetModal() {
+        newSujetModal.classList.add('hidden');
+    }
+    
+    async function createNewSujet() {
+        const title = newSujetTitleInput.value.trim();
+        if (!title) {
+            alert('Title cannot be empty');
+            return;
+        }
+        
+        try {
+            const response = await fetch('/add_sujet', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    title: title
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                // Close the modal
+                closeNewSujetModal();
+                
+                // Load the newly created sujet
+                if (result.sujet && result.sujet.id) {
+                    // Update the current sujet data
+                    currentSujetData = result.sujet;
+                    currentSujetId = result.sujet.id;
+                    
+                    // Display the new sujet
+                    displaySujet(result.sujet);
+                }
+            } else {
+                console.error('Error creating sujet:', result.message || 'Unknown error');
+            }
+        } catch (error) {
+            console.error('Error creating sujet:', error);
+        }
+    }
+
     // --- Event Listeners ---
     saveButton.addEventListener('click', () => handleSujetAction('enriched'));
     skipButton.addEventListener('click', () => handleSujetAction('skipped'));
     deleteButton.addEventListener('click', handleDeleteSujet);
-    reverseSortButton.addEventListener('click', handleReverseSort);
+    sortOrderButton.addEventListener('click', handleSortOrderToggle);
     quickSparkButton.addEventListener('click', handleQuickSpark);
-
+    favoriteButton.addEventListener('click', toggleFavorite);
+    editTitleButton.addEventListener('click', showTitleEditForm);
+    saveTitleButton.addEventListener('click', saveEditedTitle);
+    cancelTitleButton.addEventListener('click', hideTitleEditForm);
+    firstSujetButton.addEventListener('click', () => loadEdgeSujet('first'));
+    lastSujetButton.addEventListener('click', () => loadEdgeSujet('last'));
     backButton.addEventListener('click', () => {
-        if (history.length > 1) {
-            history.pop();
-            const previousSujetId = history[history.length - 1];
-            loadSujetById(previousSujetId);
-        } else {
-            backButton.disabled = true;
+        loadAdjacentSujet('prev');
+    });
+    
+    // New Sujet Modal Event Listeners
+    newSujetButton.addEventListener('click', openNewSujetModal);
+    closeModalButton.addEventListener('click', closeNewSujetModal);
+    cancelSujetButton.addEventListener('click', closeNewSujetModal);
+    createSujetButton.addEventListener('click', createNewSujet);
+    
+    // Close modal if clicking outside of it
+    window.addEventListener('click', (event) => {
+        if (event.target === newSujetModal) {
+            closeNewSujetModal();
+        }
+    });
+    
+    // Allow pressing Enter in the title input to submit
+    newSujetTitleInput.addEventListener('keypress', (event) => {
+        if (event.key === 'Enter') {
+            createNewSujet();
         }
     });
 
