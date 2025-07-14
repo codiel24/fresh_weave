@@ -171,11 +171,28 @@ def delete_sujet(sujet_id):
     if not sujet_to_log:
         return jsonify({'status': 'error', 'message': 'Sujet not found'}), 404
 
+    # Get the next sujet ID before deletion
+    sort_order = session.get('sort_order', 'DESC')
+    tags = request.args.get('tags', '').split(',') if request.args.get('tags') else []
+    people = request.args.get('people', '').split(',') if request.args.get('people') else []
+    
+    # Find the adjacent sujet before deleting
+    next_sujet = db_operations.get_adjacent_sujet(sujet_id, tags, people, sort_order, 'next')
+    
     # Google Sheets logging removed to fix 500 errors
     
     # Delete from the database
     db_operations.delete_sujet_from_db(sujet_id)
-    return jsonify({'status': 'success', 'message': 'Sujet deleted successfully.'})
+    
+    # Return the next sujet ID if available
+    if next_sujet:
+        return jsonify({
+            'status': 'success', 
+            'message': 'Sujet deleted successfully.',
+            'next_sujet_id': next_sujet['id']
+        })
+    else:
+        return jsonify({'status': 'success', 'message': 'Sujet deleted successfully.'})
 
 @app.route('/get_all_tags')
 def get_all_tags():

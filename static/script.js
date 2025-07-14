@@ -598,9 +598,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             console.log('[DEBUG] handleDeleteSujet: Response received:', data);
             
-            // After deletion, move to the next sujet in the current sort order
-            const direction = sortDirectionSpan.textContent === 'ASC' ? 'next' : 'prev';
-            loadAdjacentSujet(direction);
+            // After deletion, always move to the next sujet in the current sort order
+            // In both ASC and DESC, we want to increment by 1 in the direction of the sort
+            loadAdjacentSujet('next');
             updateSujetCount();
         } catch (error) {
             console.error('Network error when deleting sujet:', error);
