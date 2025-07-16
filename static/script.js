@@ -520,21 +520,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Action Handlers (Save, Skip, Delete, etc.) ---
 
     function getSelectedPeopleFromToggles() {
-        // Get all active person toggle buttons and extract their values
         return Array.from(personTogglesDiv.querySelectorAll('.person-toggle.active')).map(btn => {
-            // Use the full name from the title if it exists (for abbreviations), otherwise use textContent
             return btn.title || btn.textContent.trim();
         });
     }
 
     async function handleSujetAction(actionType) {
         if (!currentSujetData) return;
-        let endpoint = '';
-        let payload = {
-            id: currentSujetData.id,
-        };
 
-        if (actionType === 'enriched') {
+        let endpoint = '';
+        let payload = { id: currentSujetData.id };
+
+        if (actionType === 'save') {
             endpoint = '/save_sujet';
             payload.user_notes = userNotesTextarea.value;
             payload.user_tags = userTagsInput.value;
@@ -542,28 +539,21 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (actionType === 'skipped') {
             endpoint = '/skip_sujet';
         } else {
-            return; // Should not happen
+            return; // Should not happen for this function
         }
 
         try {
-            console.log(`--- DEBUG (handleSujetAction): Sending ${actionType} request to ${endpoint} with payload:`, payload);
             const response = await fetch(endpoint, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
             });
 
-            // Check if response is ok before trying to parse JSON
             if (!response.ok) {
                 throw new Error(`Server responded with status ${response.status}`);
             }
 
-            const data = await response.json();
-            console.log(`--- DEBUG (handleSujetAction): Response received:`, data);
-
-            // After saving or skipping, always move to the next sujet in the current sort order
+            await response.json();
             loadAdjacentSujet('next');
         } catch (error) {
             console.error(`--- ERROR (handleSujetAction): Action ${actionType} failed:`, error);
@@ -676,59 +666,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function showTitleEditForm() {
         if (!currentSujetData) return;
-        
-        // Get the current title text
         const titleText = originalSujetSpan.textContent.trim();
-        
-        // Set the input value to the current title
         editTitleInput.value = titleText;
-        
-        // Show the edit form, hide the title
         originalSujetSpan.style.display = 'none';
         editTitleContainer.classList.remove('hidden');
-        
-        // Focus the input
         editTitleInput.focus();
     }
-    
+
     function hideTitleEditForm() {
         originalSujetSpan.style.display = 'inline';
         editTitleContainer.classList.add('hidden');
     }
-    
+
     function saveEditedTitle() {
         if (!currentSujetData || !currentSujetId) return;
-        
         const newTitle = editTitleInput.value.trim();
         if (!newTitle) {
             alert('Title cannot be empty');
             return;
         }
-        
-        // Send the updated title to the server
         fetch(`/update_title/${currentSujetId}`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ title: newTitle })
         })
         .then(response => {
-            if (!response.ok) {
-                throw new Error('Failed to update title');
-            }
+            if (!response.ok) throw new Error('Failed to update title');
             return response.json();
         })
         .then(data => {
-            // Update the displayed title
             originalSujetSpan.textContent = newTitle;
-            
-            // Hide the edit form
             hideTitleEditForm();
-            
-            // Update the current sujet data
             if (currentSujetData) {
-                // Update the title part while preserving the ID prefix
                 const idPrefix = currentSujetData.original_sujet.match(/^ID:\s*(\d+)\s*-\s*/);
                 if (idPrefix && idPrefix[0]) {
                     currentSujetData.original_sujet = idPrefix[0] + newTitle;
@@ -744,51 +713,33 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function openNewSujetModal() {
-        // Clear previous values
         newSujetTitleInput.value = '';
-        
-        // Show the modal
         newSujetModal.classList.remove('hidden');
-        
-        // Focus the title input
         newSujetTitleInput.focus();
     }
-    
+
     function closeNewSujetModal() {
         newSujetModal.classList.add('hidden');
     }
-    
+
     async function createNewSujet() {
         const title = newSujetTitleInput.value.trim();
         if (!title) {
             alert('Title cannot be empty');
             return;
         }
-        
         try {
             const response = await fetch('/add_sujet', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    title: title
-                })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: title })
             });
-            
             const result = await response.json();
-            
             if (result.status === 'success') {
-                // Close the modal
                 closeNewSujetModal();
-                
-                // Load the newly created sujet
                 if (result.sujet && result.sujet.id) {
-                    // Update the current sujet data
                     currentSujetData = result.sujet;
                     currentSujetId = result.sujet.id;
-                    
-                    // Display the new sujet
                     displaySujet(result.sujet);
                 }
             } else {
@@ -800,7 +751,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Event Listeners ---
-    saveButton.addEventListener('click', () => handleSujetAction('enriched'));
+    saveButton.addEventListener('click', () => handleSujetAction('save'));
     skipButton.addEventListener('click', () => handleSujetAction('skipped'));
     deleteButton.addEventListener('click', handleDeleteSujet);
     sortOrderButton.addEventListener('click', handleSortOrderToggle);

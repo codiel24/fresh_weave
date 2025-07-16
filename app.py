@@ -141,17 +141,16 @@ def last():
 
 @app.route('/save_sujet', methods=['POST'])
 def save_sujet():
-    """Marks a sujet as 'enriched' in SQLite with user notes, tags, and person."""
+    """Saves user notes, tags, and person for a sujet."""
     data = request.get_json()
     sujet_id = data.get('id')
     user_notes = data.get('user_notes', '')
     user_tags = data.get('user_tags', '')
     person = data.get('person', '')
 
-    db_operations.update_sujet_status(sujet_id, 'enriched', user_notes, user_tags, person)
+    db_operations.update_sujet_details(sujet_id, user_notes, user_tags, person)
     
-    # Google Sheets logging removed to fix 500 errors
-    return jsonify({'status': 'success', 'message': 'Sujet saved successfully.'})
+    return jsonify({'status': 'success', 'message': 'Sujet details saved successfully.'})
 
 @app.route('/skip_sujet', methods=['POST'])
 def skip_sujet():

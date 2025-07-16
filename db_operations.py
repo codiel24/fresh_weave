@@ -190,19 +190,22 @@ def get_first_or_last_sujet_from_db(first=True, sort_order='ASC', tags=None, peo
         
     return None
 
-def update_sujet_status(sujet_id, status, user_notes=None, user_tags=None, person=None):
-    """Updates the status and other fields of a sujet in the database."""
+def update_sujet_status(sujet_id, status):
+    """Updates the status of a sujet (e.g., 'skipped')."""
     db = get_db()
-    if status == 'enriched':
-        db.execute(
-            'UPDATE sujets SET status = ?, user_notes = ?, user_tags = ?, person = ? WHERE id = ?',
-            (status, user_notes, user_tags, person, sujet_id)
-        )
-    elif status == 'skipped':
-        db.execute(
-            'UPDATE sujets SET status = ? WHERE id = ?',
-            (status, sujet_id)
-        )
+    db.execute(
+        'UPDATE sujets SET status = ? WHERE id = ?',
+        (status, sujet_id)
+    )
+    db.commit()
+
+def update_sujet_details(sujet_id, user_notes, user_tags, person):
+    """Updates the user-provided details of a sujet without changing its status."""
+    db = get_db()
+    db.execute(
+        'UPDATE sujets SET user_notes = ?, user_tags = ?, person = ? WHERE id = ?',
+        (user_notes, user_tags, person, sujet_id)
+    )
     db.commit()
 
 def delete_sujet_from_db(sujet_id):
