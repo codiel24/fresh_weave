@@ -357,6 +357,11 @@ button:hover {
     background-color: #FD9950;
     /* Warm orange from your palette */
     color: #333;
+    /* Mobile touch optimizations */
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
 #skip-button:hover {
@@ -407,8 +412,11 @@ button:hover {
     background-color: #F0BD82;
     /* Updated warm orange to match nav buttons */
     color: #333;
-    /* margin-left: 10px; Removed to allow flex to space items */
-    /* Space from Save/Skip */
+    /* Mobile touch optimizations */
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
 #back-button:hover {
@@ -685,10 +693,25 @@ input[type="text"] {
     background-color: #F0BD82;
     /* Updated warm orange for nav buttons */
     color: #333;
+    /* Mobile touch optimizations */
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .nav-button:hover {
     background-color: #ed9f5a;
+}
+
+/* Mobile-specific button improvements */
+@media (max-width: 600px) {
+    .nav-button {
+        min-height: 44px;
+        /* iOS recommended touch target */
+        padding: 12px 14px;
+        font-size: 1.2em;
+    }
 }
 
 /* Save button */

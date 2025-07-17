@@ -118,7 +118,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const existingAllBtn = container.querySelector('.select-all-button');
         if (existingAllBtn) existingAllBtn.remove();
         container.innerHTML = '';
-        items.forEach(item => {
+
+        let ideaButton = null;
+
+        items.forEach((item, index) => {
             if (!item) return;
             const button = document.createElement('button');
             if (type === 'tag' && tagAbbreviations[item]) {
@@ -134,12 +137,18 @@ document.addEventListener('DOMContentLoaded', () => {
             button.dataset.value = item.trim().toLowerCase();
             button.addEventListener('click', handleToggleClick);
             container.appendChild(button);
+
+            // Remember the "Idea/Project" button for tag type
+            if (type === 'tag' && item.trim().toLowerCase() === 'idea/project') {
+                ideaButton = button;
+            }
         });
-        // Add Select All button at the end
-        const selectAllBtn = document.createElement('button');
-        selectAllBtn.className = 'select-all-button';
-        selectAllBtn.textContent = 'All';
-        if (type === 'tag') {
+
+        // For tags, add Select All button right after "Idea/Project"
+        if (type === 'tag' && ideaButton) {
+            const selectAllBtn = document.createElement('button');
+            selectAllBtn.className = 'select-all-button';
+            selectAllBtn.textContent = 'All';
             selectAllBtn.id = 'select-all-tags';
             selectAllBtn.onclick = () => {
                 const allBtns = container.querySelectorAll('.tag-toggle');
@@ -148,7 +157,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (editMode === 'filter') updateActiveFilterStateFromUI();
                 else updateSujetDataFromToggles();
             };
-        } else if (type === 'person') {
+            // Insert the All button right after the Idea button
+            ideaButton.insertAdjacentElement('afterend', selectAllBtn);
+        }
+
+        // For people, add Select All button at the end (as before)
+        if (type === 'person') {
+            const selectAllBtn = document.createElement('button');
+            selectAllBtn.className = 'select-all-button';
+            selectAllBtn.textContent = 'All';
             selectAllBtn.id = 'select-all-people';
             selectAllBtn.onclick = () => {
                 const allBtns = container.querySelectorAll('.person-toggle');
@@ -157,8 +174,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (editMode === 'filter') updateActiveFilterStateFromUI();
                 else updateSujetDataFromToggles();
             };
+            container.appendChild(selectAllBtn);
         }
-        container.appendChild(selectAllBtn);
     }
 
     function handleToggleClick(event) {
@@ -444,6 +461,20 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // Throttle rapid consecutive calls, but allow fast forward during long press
+        const now = Date.now();
+        const isInLongPress = skipIsLongPressing || backIsLongPressing;
+        const throttleTime = isInLongPress ? 50 : NAVIGATION_THROTTLE_MS; // Shorter throttle during long press
+
+        if (now - lastNavigationTime < throttleTime) {
+            console.log(`[THROTTLE] Navigation call ignored, too soon (${now - lastNavigationTime}ms ago, threshold: ${throttleTime}ms)`);
+            return;
+        }
+        lastNavigationTime = now;
+
+        debugNavigation(`LOAD ADJACENT START (${direction})`, currentSujetId, false);
+        console.trace(`[TRACE] loadAdjacentSujet called with direction: ${direction}`);
+
         const filters = getActiveFiltersForQuery();
         const qp = [
             `id=${currentSujetId}`,
@@ -466,12 +497,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 displaySujet(data.sujet);
+                debugNavigation(`LOAD ADJACENT SUCCESS (${direction})`, data.sujet.id, false);
+
+                // Clean up any stuck long press states after successful navigation
+                cleanupAllLongPressStates();
 
                 // Update back button state
                 backButton.disabled = history.length <= 1;
-
-                // Increment offset for next fetch
-                currentOffset++;
             } else if (data.status === 'no_more_sujets') {
                 // Wrap around to first or last depending on direction
                 const edge = direction === 'next' ? 'first' : 'last';
@@ -627,8 +659,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch('/toggle_sort', { method: 'POST' });
             const result = await response.json();
             if (response.ok && result.status === 'ok') {
-                // Update the sort direction display
-                sortDirectionSpan.textContent = result.sort_order;
+                // Update the sort direction display with arrows
+                sortDirectionSpan.innerHTML = result.sort_order === 'ASC' ? '&uarr;' : '&darr;';
 
                 // Provide visual feedback that sort direction changed
                 sortOrderButton.classList.add('active');
@@ -754,11 +786,180 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error('Error creating sujet:', error);
         }
+    }    // --- Fast Forward Long Press Implementation ---
+    let skipLongPressTimer = null;
+    let skipFastForwardInterval = null;
+    let skipIsLongPressing = false;
+    let skipWasLongPress = false;
+
+    let backLongPressTimer = null;
+    let backFastForwardInterval = null;
+    let backIsLongPressing = false;
+    let backWasLongPress = false;
+
+    // Global cleanup function to reset all long press states
+    function cleanupAllLongPressStates() {
+        // Skip button cleanup
+        if (skipLongPressTimer) {
+            clearTimeout(skipLongPressTimer);
+            skipLongPressTimer = null;
+        }
+        if (skipFastForwardInterval) {
+            clearInterval(skipFastForwardInterval);
+            skipFastForwardInterval = null;
+        }
+        skipIsLongPressing = false;
+        skipWasLongPress = false;
+
+        // Back button cleanup
+        if (backLongPressTimer) {
+            clearTimeout(backLongPressTimer);
+            backLongPressTimer = null;
+        }
+        if (backFastForwardInterval) {
+            clearInterval(backFastForwardInterval);
+            backFastForwardInterval = null;
+        }
+        backIsLongPressing = false;
+        backWasLongPress = false;
+    }
+
+    function startSkipFastForward() {
+        if (skipIsLongPressing) return; // Prevent multiple intervals
+        skipIsLongPressing = true;
+        skipWasLongPress = true;
+
+        // Fast forward every 100ms during long press (10 times per second)
+        skipFastForwardInterval = setInterval(() => {
+            if (!skipButton.disabled) {
+                debugNavigation('SKIP FAST FORWARD', currentSujetId, true);
+                // Fast forward just navigates, doesn't save
+                loadAdjacentSujet('next');
+            } else {
+                stopSkipFastForward();
+            }
+        }, 100);
+    }
+
+    function stopSkipFastForward() {
+        if (skipLongPressTimer) {
+            clearTimeout(skipLongPressTimer);
+            skipLongPressTimer = null;
+        }
+        if (skipFastForwardInterval) {
+            clearInterval(skipFastForwardInterval);
+            skipFastForwardInterval = null;
+        }
+        skipIsLongPressing = false;
+        // Reset the flag after a delay to allow click event to check it
+        setTimeout(() => {
+            skipWasLongPress = false;
+        }, 100);
+    }
+
+    function startBackFastForward() {
+        if (backIsLongPressing) return; // Prevent multiple intervals
+        backIsLongPressing = true;
+        backWasLongPress = true;
+
+        // Fast backward every 100ms during long press (10 times per second) 
+        backFastForwardInterval = setInterval(() => {
+            if (!backButton.disabled) {
+                debugNavigation('BACK FAST FORWARD', currentSujetId, true);
+                loadAdjacentSujet('prev');
+            } else {
+                stopBackFastForward();
+            }
+        }, 100);
+    }
+
+    function stopBackFastForward() {
+        if (backLongPressTimer) {
+            clearTimeout(backLongPressTimer);
+            backLongPressTimer = null;
+        }
+        if (backFastForwardInterval) {
+            clearInterval(backFastForwardInterval);
+            backFastForwardInterval = null;
+        }
+        backIsLongPressing = false;
+        // Reset the flag after a delay to allow click event to check it
+        setTimeout(() => {
+            backWasLongPress = false;
+        }, 100);
+    }
+
+    // === MOBILE-FIRST APPROACH ===
+    // Primary: Touch events for mobile (Chrome Android)
+    // Fallback: Click events for desktop testing
+
+    // Touch events for mobile - skip button
+    skipButton.addEventListener('touchstart', (e) => {
+        if (!skipButton.disabled) {
+            e.preventDefault(); // Prevent mouse events and click
+            skipWasLongPress = false;
+            skipLongPressTimer = setTimeout(startSkipFastForward, 300);
+        }
+    });
+
+    skipButton.addEventListener('touchend', (e) => {
+        e.preventDefault(); // Prevent mouse events and click
+        stopSkipFastForward();
+        // If it wasn't a long press, trigger normal skip
+        if (!skipWasLongPress) {
+            setTimeout(() => {
+                if (!skipWasLongPress) {
+                    loadAdjacentSujet('next');
+                }
+            }, 10);
+        }
+    });
+
+    skipButton.addEventListener('touchcancel', stopSkipFastForward);
+
+    // Touch events for mobile - back button
+    backButton.addEventListener('touchstart', (e) => {
+        if (!backButton.disabled) {
+            e.preventDefault(); // Prevent mouse events and click
+            backWasLongPress = false;
+            backLongPressTimer = setTimeout(startBackFastForward, 300);
+        }
+    });
+
+    backButton.addEventListener('touchend', (e) => {
+        e.preventDefault(); // Prevent mouse events and click
+        stopBackFastForward();
+        // If it wasn't a long press, trigger normal back
+        if (!backWasLongPress) {
+            setTimeout(() => {
+                if (!backWasLongPress) {
+                    loadAdjacentSujet('prev');
+                }
+            }, 10);
+        }
+    });
+
+    backButton.addEventListener('touchcancel', stopBackFastForward);
+
+    // Debug function to track navigation
+    function debugNavigation(action, sujetId, wasLongPress) {
+        console.log(`[NAV DEBUG] ${action} - SujetID: ${sujetId}, LongPress: ${wasLongPress}, CurrentOffset: ${currentOffset}`);
     }
 
     // --- Event Listeners ---
     saveButton.addEventListener('click', () => handleSujetAction('save'));
-    skipButton.addEventListener('click', () => handleSujetAction('skipped'));
+    skipButton.addEventListener('click', (e) => {
+        // Only handle click if it's not a long press
+        setTimeout(() => { // Delay to let long press flag update
+            if (!skipWasLongPress) {
+                debugNavigation('SKIP CLICK', currentSujetId, skipWasLongPress);
+                // Skip just means navigate to next without saving anything
+                loadAdjacentSujet('next');
+            } else {
+                debugNavigation('SKIP CLICK BLOCKED', currentSujetId, skipWasLongPress);
+            }
+        }, 20);
+    });
     deleteButton.addEventListener('click', handleDeleteSujet);
     sortOrderButton.addEventListener('click', handleSortOrderToggle);
     quickSparkButton.addEventListener('click', handleQuickSpark);
@@ -769,7 +970,17 @@ document.addEventListener('DOMContentLoaded', () => {
     firstSujetButton.addEventListener('click', () => loadEdgeSujet('first'));
     lastSujetButton.addEventListener('click', () => loadEdgeSujet('last'));
     backButton.addEventListener('click', () => {
-        loadAdjacentSujet('prev');
+        eventListenerCount++;
+        console.log(`[DEBUG] Back button clicked, listener count: ${eventListenerCount}`);
+        // Only handle click if it's not a long press
+        setTimeout(() => { // Delay to let long press flag update
+            if (!backWasLongPress) {
+                debugNavigation('BACK CLICK', currentSujetId, backWasLongPress);
+                loadAdjacentSujet('prev');
+            } else {
+                debugNavigation('BACK CLICK BLOCKED', currentSujetId, backWasLongPress);
+            }
+        }, 20);
     });
 
     // Title expansion click handler
@@ -827,5 +1038,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initializeApp();
 
-    // Event handlers for selectAll buttons are now defined inline within renderToggles.
+    // Track how many times event listeners are attached
+    let eventListenerCount = 0;
+
+    // Navigation throttling to prevent rapid consecutive calls
+    let lastNavigationTime = 0;
+    const NAVIGATION_THROTTLE_MS = 200;
 });

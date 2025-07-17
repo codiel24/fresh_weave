@@ -25,10 +25,6 @@
                 </div>
                 <span id="sujet-count-display" class="sujet-count-display"></span>
                 <span>| Created: <span id="date-created"></span></span>
-                <span id="status-view-compact">
-                    <button id="first-sujet-button" class="button nav-button">&laquo; First</button>
-                    <button id="last-sujet-button" class="button nav-button">Last &raquo;</button>
-                </span>
             </div>
             <!-- Content displayed when a sujet is loaded -->
             <div id="sujet-display-area">
@@ -52,14 +48,17 @@
         <!-- Controls independent of specific sujet content -->
         <div id="global-controls" class="controls">
             <div class="actions">
-                <button id="back-button" class="button">&larr;</button>
+                <button id="first-sujet-button" class="button nav-button">&laquo;</button>
+                <button id="back-button" class="button nav-button">&larr;</button>
                 <button id="save-button" class="button save-button">Save</button>
-                <button id="skip-button" class="button skip-button">Skip</button>
+                <button id="skip-button" class="button skip-button">&rarr;</button>
                 <button id="delete-button" class="button delete-button">Del</button>
-                <button id="sort-order-button" class="button">Sort: <span id="sort-direction">ASC</span></button>
+                <button id="last-sujet-button" class="button nav-button">&raquo;</button>
                 <button id="quick-spark-button" class="button">Quick</button>
                 <button id="new-sujet-button" class="button">+ New</button>
                 <button id="favorite-button" class="button favorite-button">☆</button>
+                <button id="sort-order-button" class="button sort-button" title="Toggle sort order"><span
+                        id="sort-direction">&uarr;</span></button>
             </div>
         </div>
 
