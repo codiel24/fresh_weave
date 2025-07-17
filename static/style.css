@@ -60,6 +60,8 @@ h3 {
 
 .sujet-header {
     margin-bottom: 0.25em;
+    margin-top: 8px;
+    /* Added spacing above title matching button gaps */
     min-height: 2.8em;
     /* Fixed height for approximately 2 lines */
     max-height: 2.8em;
@@ -279,9 +281,9 @@ h3 {
 .person-toggle {
     padding: 2px 8px;
     margin: 2px 2px 2px 0;
-    background-color: #e0e0e0;
-    color: #333;
-    border: 1px solid #ccc;
+    background-color: #f8f9fa;
+    color: #495057;
+    border: 1px solid #dee2e6;
     border-radius: 14px;
     cursor: pointer;
     font-size: 0.82rem;
@@ -307,29 +309,39 @@ h3 {
 
 .tag-toggle:hover,
 .person-toggle:hover {
-    background-color: #d5d5d5;
+    background-color: #e9ecef;
 }
 
-.tag-toggle.active,
+.tag-toggle.active {
+    background-color: #A0AAFD;
+    /* Soft lavender blue from your palette */
+    color: #333;
+    border-color: #A0AAFD;
+}
+
 .person-toggle.active {
-    background-color: #007bff;
-    /* Primary blue when active */
-    color: white;
-    border-color: #007bff;
+    background-color: #C3FD9B;
+    /* Soft green from your palette */
+    color: #333;
+    border-color: #C3FD9B;
 }
 
-.tag-toggle.active:hover,
+.tag-toggle.active:hover {
+    background-color: #8b96fc;
+    border-color: #8b96fc;
+}
+
 .person-toggle.active:hover {
-    background-color: #0056b3;
-    border-color: #0056b3;
+    background-color: #b0fc86;
+    border-color: #b0fc86;
 }
 
 button {
     padding: 10px 15px;
     margin-right: 10px;
-    background-color: #5cb85c;
-    /* Green save button */
-    color: white;
+    background-color: #F9CC9D;
+    /* Warm peach from your palette */
+    color: #333;
     border: none;
     border-radius: 4px;
     cursor: pointer;
@@ -338,16 +350,17 @@ button {
 }
 
 button:hover {
-    background-color: #4cae4c;
+    background-color: #f7bb82;
 }
 
 #skip-button {
-    background-color: #f0ad4e;
-    /* Orange skip button */
+    background-color: #FD9950;
+    /* Warm orange from your palette */
+    color: #333;
 }
 
 #skip-button:hover {
-    background-color: #ec971f;
+    background-color: #fc8635;
 }
 
 .toggle-header {
@@ -391,14 +404,15 @@ button:hover {
 
 /* Style for Back button */
 #back-button {
-    background-color: #6c757d;
-    /* Grey color */
+    background-color: #F0BD82;
+    /* Updated warm orange to match nav buttons */
+    color: #333;
     /* margin-left: 10px; Removed to allow flex to space items */
     /* Space from Save/Skip */
 }
 
 #back-button:hover {
-    background-color: #5a6268;
+    background-color: #ed9f5a;
 }
 
 #back-button:disabled {
@@ -516,9 +530,9 @@ input[type="text"] {
 
 .tag-toggle {
     padding: 6px 12px;
-    border: 1px solid #007bff;
+    border: 1px solid #A0AAFD;
     background-color: #fff;
-    color: #007bff;
+    color: #A0AAFD;
     border-radius: 15px;
     cursor: pointer;
     transition: all 0.2s ease-in-out;
@@ -526,14 +540,14 @@ input[type="text"] {
 }
 
 .tag-toggle.active {
-    background-color: #007bff;
-    color: #fff;
+    background-color: #A0AAFD;
+    color: #333;
 }
 
 .tag-toggle:hover {
-    background-color: #0056b3;
-    color: #fff;
-    border-color: #0056b3;
+    background-color: #8b96fc;
+    color: #333;
+    border-color: #8b96fc;
 }
 
 .controls {
@@ -545,7 +559,7 @@ input[type="text"] {
 .actions {
     display: flex;
     justify-content: center;
-    gap: 5px;
+    gap: 8px;
     flex-wrap: wrap;
     margin-top: 0.3em;
     margin-bottom: 0.1em;
@@ -553,7 +567,7 @@ input[type="text"] {
 
 @media (max-width: 600px) {
     .actions {
-        gap: 2px;
+        gap: 8px;
         margin-top: 0.1em;
         margin-bottom: 0.1em;
     }
@@ -576,179 +590,32 @@ input[type="text"] {
     cursor: not-allowed;
 }
 
-.save-button {
-    background-color: #28a745;
-    /* Green */
-}
-
-.save-button:hover:not(:disabled) {
-    background-color: #218838;
-}
-
-.skip-button {
-    background-color: #ffc107;
-    /* Yellow */
-    color: #212529;
-}
-
-.skip-button:hover:not(:disabled) {
-    background-color: #e0a800;
-}
-
-.delete-button {
-    background-color: #dc3545;
-    /* Red */
-}
-
-.delete-button:hover:not(:disabled) {
-    background-color: #c82333;
-}
-
-#back-button {
-    background-color: #17a2b8;
-    /* Teal */
-}
-
-#back-button:hover:not(:disabled) {
-    background-color: #138496;
-}
-
-.hidden {
-    display: none !important;
-}
-
-/* Styling for the 'No more sujets' message area */
-#no-more-sujets {
-    padding: 20px;
-    text-align: center;
-    font-size: 1.1em;
-    color: #555;
-    background-color: #f0f0f0;
-    border-radius: 5px;
-}
-
-/* Ensure the global controls div is always visible and at the bottom of the card content */
-#global-controls {
-    padding-top: 15px;
-    /* Add some space above the buttons */
-    border-top: 1px solid #eee;
-    /* Optional: a separator line */
-}
-
-/* Modal Dialog Styles */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    overflow: auto;
-}
-
-.modal.hidden {
-    display: none;
-}
-
-.modal:not(.hidden) {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.modal-content {
-    background-color: #fefefe;
-    margin: auto;
-    padding: 20px;
-    border: 1px solid #888;
-    border-radius: 5px;
-    width: 80%;
-    max-width: 500px;
-    position: relative;
-}
-
-.close-button {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
+/* Compact sort button */
+.sort-button {
+    padding: 8px 12px;
+    font-size: 1.2em;
+    min-width: auto;
     font-weight: bold;
-    cursor: pointer;
-    position: absolute;
-    top: 10px;
-    right: 15px;
+    background-color: #11B58F;
+    /* Updated teal green for sort button */
+    color: white;
 }
 
-.close-button:hover,
-.close-button:focus {
-    color: black;
-    text-decoration: none;
-}
-
-.modal h2 {
-    margin-top: 0;
-    margin-bottom: 15px;
-    color: #333;
-}
-
-.modal-form {
-    margin-top: 15px;
-}
-
-.modal-form label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-}
-
-.modal-form input[type="text"] {
-    width: calc(100% - 22px);
-    padding: 10px;
-    margin-bottom: 15px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 1rem;
-}
-
-.modal-buttons {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 15px;
-}
-
-/* Make sure the new-sujet-button has the same styling as other action buttons */
-#new-sujet-button {
-    background-color: #28a745;
-}
-
-#new-sujet-button:hover {
-    background-color: #218838;
-}
-
-/* Mobile optimizations for modal */
-@media (max-width: 600px) {
-    .modal-content {
-        width: 90%;
-        padding: 15px;
-    }
-
-    .modal-form input[type="text"] {
-        font-size: 16px;
-        /* Prevent zoom on focus in iOS */
-    }
+.sort-button:hover {
+    background-color: #0e9a78;
 }
 
 /* Favorite button styles */
 #favorite-button {
-    background-color: #6c757d;
+    background-color: #11B58F;
+    /* Updated teal green for favorite button */
+    color: white;
     font-size: 1.2rem;
     padding: 8px 12px;
 }
 
 #favorite-button:hover {
-    background-color: #5a6268;
+    background-color: #0e9a78;
 }
 
 .favorite-active {
@@ -803,4 +670,99 @@ input[type="text"] {
 /* Sort direction styling */
 #sort-direction {
     font-weight: bold;
+}
+
+/* General hidden class */
+.hidden {
+    display: none !important;
+}
+
+/* Navigation button standardization */
+.nav-button {
+    min-width: 40px;
+    padding: 8px 10px;
+    font-size: 1.1em;
+    background-color: #F0BD82;
+    /* Updated warm orange for nav buttons */
+    color: #333;
+}
+
+.nav-button:hover {
+    background-color: #ed9f5a;
+}
+
+/* Save button */
+.save-button {
+    background-color: #C3FD9B;
+    /* Soft green from your palette */
+    color: #333;
+    min-width: 40px;
+    padding: 8px 10px;
+    font-size: 1.0em;
+}
+
+.save-button:hover {
+    background-color: #b0fc86;
+}
+
+/* Skip button */
+.skip-button {
+    background-color: #FD9950;
+    /* Warm orange from your palette */
+    color: #333;
+    min-width: 40px;
+    padding: 8px 10px;
+    font-size: 1.1em;
+}
+
+.skip-button:hover {
+    background-color: #fc8635;
+}
+
+.skip-button:hover {
+    background-color: #138496;
+}
+
+/* Delete button */
+.delete-button {
+    background-color: #F08156;
+    /* Updated orange-red for delete */
+    color: #333;
+    min-width: 40px;
+    padding: 8px 10px;
+}
+
+.delete-button:hover {
+    background-color: #ed633a;
+}
+
+/* Select all button styling */
+.select-all-button {
+    background-color: #F9CC9D;
+    /* Warm peach to match nav buttons */
+    color: #333;
+    border: 1px solid #f7bb82;
+    border-radius: 4px;
+    cursor: pointer;
+    padding: 3px 8px;
+    font-size: 0.8em;
+    margin: 2px 2px 2px 4px;
+    display: inline-block;
+}
+
+.select-all-button:hover {
+    background-color: #f7bb82;
+}
+
+/* Quick and New button styles */
+#quick-spark-button,
+#new-sujet-button {
+    background-color: #C3FD9B;
+    /* Same as save button - soft green */
+    color: #333;
+}
+
+#quick-spark-button:hover,
+#new-sujet-button:hover {
+    background-color: #b0fc86;
 }
