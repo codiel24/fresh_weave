@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     let oldBtnPerson = document.getElementById('select-all-people');
     if (oldBtnPerson && oldBtnPerson.parentElement && oldBtnPerson.parentElement.id !== 'person-toggles') {
-         if (oldBtnPerson.parentElement.classList.contains('toggle-header')) {
+        if (oldBtnPerson.parentElement.classList.contains('toggle-header')) {
             oldBtnPerson.parentElement.remove(); // Remove the whole old header
         } else {
             oldBtnPerson.remove(); // Otherwise just remove the button itself
@@ -23,8 +23,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const originalSujetSpan = document.getElementById('original-sujet');
     const displaySujetIdSpan = document.getElementById('display-sujet-id'); // Added for separate ID display
     const aiSuggestionSpan = document.getElementById('ai-suggestion');
-    const viewCountSpan = document.getElementById('view-count');
-    const currentStatusSpan = document.getElementById('current-status');
     const userNotesTextarea = document.getElementById('user-notes');
     const userTagsInput = document.getElementById('user-tags');
     const tagTogglesDiv = document.getElementById('tag-toggles');
@@ -228,10 +226,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateFavoriteButtonState() {
         if (!currentSujetData) return;
-        
+
         const sujetTags = parseCsvString(userTagsInput.value);
         const isFavorite = sujetTags.includes('fav');
-        
+
         // Update button appearance
         if (isFavorite) {
             favoriteButton.textContent = '★'; // Filled star
@@ -244,10 +242,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function toggleFavorite() {
         if (!currentSujetData) return;
-        
+
         const sujetTags = parseCsvString(userTagsInput.value);
         const favIndex = sujetTags.indexOf('fav');
-        
+
         if (favIndex !== -1) {
             // Remove 'fav' tag
             sujetTags.splice(favIndex, 1);
@@ -255,13 +253,13 @@ document.addEventListener('DOMContentLoaded', () => {
             // Add 'fav' tag
             sujetTags.push('fav');
         }
-        
+
         // Update the tags input field
         userTagsInput.value = sujetTags.join(', ');
-        
+
         // Update button appearance
         updateFavoriteButtonState();
-        
+
         // Update tag toggles if in tag mode
         if (editMode === 'tag') {
             updateToggleAppearance();
@@ -273,18 +271,26 @@ document.addEventListener('DOMContentLoaded', () => {
         currentSujetData = sujet;
         // Parse ID and Title from sujet.original_sujet (e.g., "ID: 123 - Title Text")
         const match = sujet.original_sujet.match(/^ID:\s*(\d+)\s*-\s*(.*)$/);
+        let titleText;
         if (match && match[1] && match[2]) {
             displaySujetIdSpan.textContent = match[1]; // Just the ID number
-            originalSujetSpan.textContent = match[2]; // Just the Title text
+            titleText = match[2]; // Just the Title text
+            originalSujetSpan.textContent = titleText;
         } else {
             // Fallback if parsing fails, though this shouldn't happen with consistent data
             displaySujetIdSpan.textContent = sujet.id; // Use sujet.id as a fallback for the number
-            originalSujetSpan.textContent = sujet.original_sujet; // Show the original string as fallback title
+            titleText = sujet.original_sujet; // Show the original string as fallback title
+            originalSujetSpan.textContent = titleText;
+        }
+
+        // Set title attribute for tooltip if text is longer than what fits in 2 lines
+        if (titleText.length > 80) { // Approximate character limit for 2 lines
+            originalSujetSpan.setAttribute('title', titleText);
+        } else {
+            originalSujetSpan.removeAttribute('title');
         }
 
         aiSuggestionSpan.textContent = sujet.ai_suggestion;
-        viewCountSpan.textContent = sujet.view_count;
-        currentStatusSpan.textContent = sujet.status;
         userNotesTextarea.value = sujet.user_notes || '';
         userTagsInput.value = sujet.user_tags || '';
 
@@ -360,14 +366,14 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error('Network error fetching total sujet count:', error);
         }
-        
+
         sujetCountDisplay.textContent = `${filteredCount} / ${totalCount}`;
     }
 
     async function loadNextSujet() {
         // Get the active filters
         const filters = getActiveFiltersForQuery();
-        
+
         // Build the query string for the request
         const queryParams = [`offset=${currentOffset}`];
         if (filters.tags.length) queryParams.push(`tags=${filters.tags.map(encodeURIComponent).join(',')}`);
@@ -381,14 +387,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Always add the sujet to history, even if it's the first one
                 history.push(data.sujet.id);
                 if (history.length > historySize) history.shift();
-                
+
                 currentSujetData = data.sujet;
                 currentSujetId = data.sujet.id;
                 displaySujet(data.sujet);
-                
+
                 // Update back button state
                 backButton.disabled = history.length <= 1;
-                
+
                 // Increment offset for next fetch
                 currentOffset++;
             } else if (data.status === 'no_more_sujets') {
@@ -400,7 +406,7 @@ document.addEventListener('DOMContentLoaded', () => {
             handleLoadError(`Network error: ${error.message}`);
         }
     }
-    
+
     function handleLoadError(message) {
         sujetContentDiv.classList.add('hidden');
         noMoreSujetsDiv.textContent = message;
@@ -458,12 +464,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else if (history.length === 0) {
                     history.push(data.sujet.id);
                 }
-                
+
                 displaySujet(data.sujet);
-                
+
                 // Update back button state
                 backButton.disabled = history.length <= 1;
-                
+
                 // Increment offset for next fetch
                 currentOffset++;
             } else if (data.status === 'no_more_sujets') {
@@ -482,25 +488,25 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             // Build query string with filters if in filter mode
             let url = `/${edge}`;
-            
+
             // If in filter mode, include the active filters
             if (editMode === 'filter') {
                 const filters = getActiveFiltersForQuery();
                 const queryParams = [];
-                
+
                 if (filters.tags.length) {
                     queryParams.push(`tags=${filters.tags.map(encodeURIComponent).join(',')}`);
                 }
-                
+
                 if (filters.people.length) {
                     queryParams.push(`people=${filters.people.map(encodeURIComponent).join(',')}`);
                 }
-                
+
                 if (queryParams.length > 0) {
                     url += `?${queryParams.join('&')}`;
                 }
             }
-            
+
             const response = await fetch(url);
             const data = await response.json();
             if (data.status === 'ok' && data.sujet) {
@@ -579,15 +585,15 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             console.log('[DEBUG] handleDeleteSujet: About to fetch /delete_sujet/', currentSujetId);
             const response = await fetch(`/delete_sujet/${currentSujetId}`, { method: 'DELETE' });
-            
+
             // Check if response is ok before trying to parse JSON
             if (!response.ok) {
                 throw new Error(`Server responded with status ${response.status}`);
             }
-            
+
             const data = await response.json();
             console.log('[DEBUG] handleDeleteSujet: Response received:', data);
-            
+
             // After deletion, move to the next sujet in the current sort order
             const direction = sortDirectionSpan.textContent === 'ASC' ? 'next' : 'prev';
             loadAdjacentSujet(direction);
@@ -623,11 +629,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok && result.status === 'ok') {
                 // Update the sort direction display
                 sortDirectionSpan.textContent = result.sort_order;
-                
+
                 // Provide visual feedback that sort direction changed
                 sortOrderButton.classList.add('active');
                 setTimeout(() => sortOrderButton.classList.remove('active'), 500);
-                
+
                 // Reset offset and reload sujets with new sort order
                 currentOffset = 0;
                 loadNextSujet();
@@ -649,11 +655,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     history.push(data.sujet.id);
                     if (history.length > historySize) history.shift();
                 }
-                
+
                 currentSujetData = data.sujet;
                 currentSujetId = data.sujet.id;
                 displaySujet(data.sujet);
-                
+
                 // Update back button state
                 backButton.disabled = history.length <= 1;
             } else {
@@ -690,26 +696,26 @@ document.addEventListener('DOMContentLoaded', () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ title: newTitle })
         })
-        .then(response => {
-            if (!response.ok) throw new Error('Failed to update title');
-            return response.json();
-        })
-        .then(data => {
-            originalSujetSpan.textContent = newTitle;
-            hideTitleEditForm();
-            if (currentSujetData) {
-                const idPrefix = currentSujetData.original_sujet.match(/^ID:\s*(\d+)\s*-\s*/);
-                if (idPrefix && idPrefix[0]) {
-                    currentSujetData.original_sujet = idPrefix[0] + newTitle;
-                } else {
-                    currentSujetData.original_sujet = `ID: ${currentSujetId} - ${newTitle}`;
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to update title');
+                return response.json();
+            })
+            .then(data => {
+                originalSujetSpan.textContent = newTitle;
+                hideTitleEditForm();
+                if (currentSujetData) {
+                    const idPrefix = currentSujetData.original_sujet.match(/^ID:\s*(\d+)\s*-\s*/);
+                    if (idPrefix && idPrefix[0]) {
+                        currentSujetData.original_sujet = idPrefix[0] + newTitle;
+                    } else {
+                        currentSujetData.original_sujet = `ID: ${currentSujetId} - ${newTitle}`;
+                    }
                 }
-            }
-        })
-        .catch(error => {
-            console.error('Error updating title:', error);
-            alert('Failed to update title. Please try again.');
-        });
+            })
+            .catch(error => {
+                console.error('Error updating title:', error);
+                alert('Failed to update title. Please try again.');
+            });
     }
 
     function openNewSujetModal() {
@@ -765,20 +771,32 @@ document.addEventListener('DOMContentLoaded', () => {
     backButton.addEventListener('click', () => {
         loadAdjacentSujet('prev');
     });
-    
+
+    // Title expansion click handler
+    originalSujetSpan.addEventListener('click', () => {
+        originalSujetSpan.classList.toggle('expanded');
+    });
+
+    // Click outside to collapse expanded title
+    document.addEventListener('click', (event) => {
+        if (!originalSujetSpan.contains(event.target) && originalSujetSpan.classList.contains('expanded')) {
+            originalSujetSpan.classList.remove('expanded');
+        }
+    });
+
     // New Sujet Modal Event Listeners
     newSujetButton.addEventListener('click', openNewSujetModal);
     closeModalButton.addEventListener('click', closeNewSujetModal);
     cancelSujetButton.addEventListener('click', closeNewSujetModal);
     createSujetButton.addEventListener('click', createNewSujet);
-    
+
     // Close modal if clicking outside of it
     window.addEventListener('click', (event) => {
         if (event.target === newSujetModal) {
             closeNewSujetModal();
         }
     });
-    
+
     // Allow pressing Enter in the title input to submit
     newSujetTitleInput.addEventListener('keypress', (event) => {
         if (event.key === 'Enter') {

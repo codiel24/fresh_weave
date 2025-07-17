@@ -1,13 +1,15 @@
 <!-- weave_webapp/templates/index.html (Radio Buttons & Back Button Placement) -->
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Weave - Enrich Your Sujets</title>
-        <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
 </head>
+
 <body>
     <div class="container">
         <div id="sujet-card" class="sujet-card">
@@ -22,11 +24,10 @@
                     <label><input type="radio" name="edit-mode" value="tag"> T</label>
                 </div>
                 <span id="sujet-count-display" class="sujet-count-display"></span>
+                <span>| Created: <span id="date-created"></span></span>
                 <span id="status-view-compact">
                     <button id="first-sujet-button" class="button nav-button">&laquo; First</button>
                     <button id="last-sujet-button" class="button nav-button">Last &raquo;</button>
-                    | Status: <span id="current-status"></span> | V <strong id="view-count"></strong>
-                    | Created: <span id="date-created"></span>
                 </span>
             </div>
             <!-- Content displayed when a sujet is loaded -->
@@ -87,7 +88,7 @@
 
     </div>
 
-        <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
@@ -101,4 +102,5 @@
         }
     </script>
 </body>
+
 </html>
