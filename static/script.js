@@ -940,18 +940,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Event Listeners ---
     saveButton.addEventListener('click', () => handleSujetAction('save'));
-    skipButton.addEventListener('click', (e) => {
-        // Only handle click if it's not a long press
-        setTimeout(() => { // Delay to let long press flag update
-            if (!skipWasLongPress) {
-                debugNavigation('SKIP CLICK', currentSujetId, skipWasLongPress);
-                // Skip just means navigate to next without saving anything
-                loadAdjacentSujet('next');
-            } else {
-                debugNavigation('SKIP CLICK BLOCKED', currentSujetId, skipWasLongPress);
-            }
-        }, 20);
-    });
+    
+    // Skip and Back buttons: Touch events only (Chrome Android app)
+    // No click events needed - touch handles everything
+    
     deleteButton.addEventListener('click', handleDeleteSujet);
     quickSparkButton.addEventListener('click', handleQuickSpark);
     favoriteButton.addEventListener('click', toggleFavorite);
@@ -960,19 +952,9 @@ document.addEventListener('DOMContentLoaded', () => {
     cancelTitleButton.addEventListener('click', hideTitleEditForm);
     firstSujetButton.addEventListener('click', () => loadEdgeSujet('first'));
     lastSujetButton.addEventListener('click', () => loadEdgeSujet('last'));
-    backButton.addEventListener('click', () => {
-        eventListenerCount++;
-        console.log(`[DEBUG] Back button clicked, listener count: ${eventListenerCount}`);
-        // Only handle click if it's not a long press
-        setTimeout(() => { // Delay to let long press flag update
-            if (!backWasLongPress) {
-                debugNavigation('BACK CLICK', currentSujetId, backWasLongPress);
-                loadAdjacentSujet('prev');
-            } else {
-                debugNavigation('BACK CLICK BLOCKED', currentSujetId, backWasLongPress);
-            }
-        }, 20);
-    });
+
+    // Back button: Touch events only (Chrome Android app)
+    // No click event needed - touch handles everything
 
     // Title expansion click handler
     originalSujetSpan.addEventListener('click', () => {
