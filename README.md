@@ -1,12 +1,26 @@
 # Project Weave
 
-> A tool for exploring and curating text-based subjects ('sujets').
+> A mobile-first text curation tool for Chrome Android with touch-optimized navigation.
 
 "Weave" is a personal enrichment and conversation-sparking tool. It helps the user process, reflect on, and generate insights from a database of text snippets ('sujets').
+
+## 🚨 CRITICAL NAVIGATION INFO 🚨
+
+### Long Press Navigation (Chrome Android)
+- **Short tap (< 300ms)**: Single navigation forward/backward
+- **Long press (≥ 300ms)**: Fast navigation (10 items/second)
+
+### ⚠️ KNOWN ISSUE: Long Press Double Navigation
+**STATUS**: Currently debugging - long press triggers fast forward BUT also single navigation on release.
+
+**See LONG_PRESS_DEBUG.md for complete debugging history and failed approaches.**
+
+**DO NOT attempt to "fix" this without reading the debug documentation first.**
 
 ## Table of Contents
 
 - [Features](#features)
+- [🚨 Long Press Navigation Issue](#-long-press-navigation-issue)
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
   - [Installation & Setup](#installation--setup)
@@ -21,6 +35,24 @@
   - [Development History](#development-history)
 - [Future Direction](#future-direction)
 - [TODO List](#todo-list)
+
+## 🚨 Long Press Navigation Issue
+
+**CRITICAL**: Before attempting to debug or modify the long press navigation:
+
+1. **Read `LONG_PRESS_DEBUG.md`** - Contains complete history of failed approaches
+2. **Don't repeat failed solutions** - 5+ approaches have already been tried
+3. **Current Status**: Testing approach using `skipIsLongPressing` flag
+4. **Test Protocol**: Use Chrome remote debugging to monitor console logs
+
+### Current Behavior
+- ✅ Long press timer (300ms) triggers correctly
+- ✅ Fast forward navigation works 
+- ❌ Extra single navigation fires when finger lifts
+- ❌ Results in double navigation at end of long press
+
+### Architecture Problem
+Multiple async events (touchstart, timeout, touchend) with flag coordination create race conditions that are extremely difficult to solve reliably.
 
 ---
 
