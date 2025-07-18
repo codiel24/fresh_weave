@@ -813,7 +813,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (skipIsLongPressing) return; // Prevent multiple intervals
         skipIsLongPressing = true;
         skipWasLongPress = true; // Set the flag here to ensure it's set before touchend
-        console.log('[DEBUG] Starting skip fast forward interval');
+        console.log('[DEBUG] Starting skip fast forward interval, skipWasLongPress set to:', skipWasLongPress);
 
         // Fast forward every 100ms during long press (10 times per second)
         skipFastForwardInterval = setInterval(() => {
@@ -881,20 +881,23 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     skipButton.addEventListener('touchend', (e) => {
-        console.log('[DEBUG] Skip touchend fired, skipWasLongPress:', skipWasLongPress);
+        console.log('[DEBUG] Skip touchend fired, skipWasLongPress:', skipWasLongPress, 'skipIsLongPressing:', skipIsLongPressing);
         e.preventDefault(); // Prevent mouse events and click
         clearTimeout(skipLongPressTimer);
+        
+        // Check if we were in long press mode before stopping
+        const wasInLongPress = skipIsLongPressing;
         stopSkipFastForward();
 
-        // Wait a moment to let the flag update, then check if it was a long press
+        // Wait a moment, then check if it was a long press
         setTimeout(() => {
-            if (!skipWasLongPress) {
+            if (!wasInLongPress) {
                 console.log('[DEBUG] Skip touchend - normal navigation');
                 loadAdjacentSujet('next');
             } else {
                 console.log('[DEBUG] Skip touchend - was long press, no single navigation');
             }
-            
+
             // Reset the flag after a delay
             setTimeout(() => {
                 skipWasLongPress = false;
