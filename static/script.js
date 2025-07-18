@@ -34,8 +34,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const skipButton = document.getElementById('skip-button');
     const backButton = document.getElementById('back-button');
     const deleteButton = document.getElementById('delete-button');
-    const sortOrderButton = document.getElementById('sort-order-button');
-    const sortDirectionSpan = document.getElementById('sort-direction');
     const quickSparkButton = document.getElementById('quick-spark-button');
     const favoriteButton = document.getElementById('favorite-button');
     const firstSujetButton = document.getElementById('first-sujet-button');
@@ -102,7 +100,6 @@ document.addEventListener('DOMContentLoaded', () => {
         deleteButton.disabled = !sujetIsLoaded;
         backButton.disabled = currentHistoryLength <= 1;
         quickSparkButton.disabled = false; // Always enabled
-        sortOrderButton.disabled = false; // Always enabled
         // Add any other global buttons here if their state depends on sujetIsLoaded or history
     }
 
@@ -144,8 +141,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // For tags, add Select All button right after "Idea/Project"
+        // For tags, add favorite button and Select All button after "Idea/Project"
         if (type === 'tag' && ideaButton) {
+            // Move existing favorite button to tag area
+            const existingFavBtn = document.getElementById('favorite-button');
+            if (existingFavBtn) {
+                existingFavBtn.className = 'tag-toggle'; // Make it look like other tag buttons
+                ideaButton.insertAdjacentElement('afterend', existingFavBtn);
+            }
+
             const selectAllBtn = document.createElement('button');
             selectAllBtn.className = 'select-all-button';
             selectAllBtn.textContent = 'All';
@@ -157,8 +161,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (editMode === 'filter') updateActiveFilterStateFromUI();
                 else updateSujetDataFromToggles();
             };
-            // Insert the All button right after the Idea button
-            ideaButton.insertAdjacentElement('afterend', selectAllBtn);
+            // Insert the All button after the favorite button
+            if (existingFavBtn) {
+                existingFavBtn.insertAdjacentElement('afterend', selectAllBtn);
+            } else {
+                ideaButton.insertAdjacentElement('afterend', selectAllBtn);
+            }
         }
 
         // For people, add Select All button at the end (as before)
@@ -626,9 +634,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             console.log('[DEBUG] handleDeleteSujet: Response received:', data);
 
-            // After deletion, move to the next sujet in the current sort order
-            const direction = sortDirectionSpan.textContent === 'ASC' ? 'next' : 'prev';
-            loadAdjacentSujet(direction);
+            // After deletion, move to the next sujet
+            loadAdjacentSujet('next');
             updateSujetCount();
         } catch (error) {
             console.error('Network error when deleting sujet:', error);
@@ -651,29 +658,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             handleLoadError('Network error while fetching a random sujet: ' + error.message);
-        }
-    }
-
-    async function handleSortOrderToggle() {
-        try {
-            const response = await fetch('/toggle_sort', { method: 'POST' });
-            const result = await response.json();
-            if (response.ok && result.status === 'ok') {
-                // Update the sort direction display with arrows
-                sortDirectionSpan.innerHTML = result.sort_order === 'ASC' ? '&uarr;' : '&darr;';
-
-                // Provide visual feedback that sort direction changed
-                sortOrderButton.classList.add('active');
-                setTimeout(() => sortOrderButton.classList.remove('active'), 500);
-
-                // Reset offset and reload sujets with new sort order
-                currentOffset = 0;
-                loadNextSujet();
-            } else {
-                alert(`Error toggling sort order: ${result.message || 'Unknown error'}`);
-            }
-        } catch (error) {
-            alert('Network or unexpected error when toggling sort order. Check console.');
         }
     }
 
@@ -827,11 +811,10 @@ document.addEventListener('DOMContentLoaded', () => {
     function startSkipFastForward() {
         if (skipIsLongPressing) return; // Prevent multiple intervals
         skipIsLongPressing = true;
-        skipWasLongPress = true;
 
         // Fast forward every 100ms during long press (10 times per second)
         skipFastForwardInterval = setInterval(() => {
-            if (!skipButton.disabled) {
+            if (!skipButton.disabled && skipIsLongPressing) {
                 debugNavigation('SKIP FAST FORWARD', currentSujetId, true);
                 // Fast forward just navigates, doesn't save
                 loadAdjacentSujet('next');
@@ -842,29 +825,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function stopSkipFastForward() {
-        if (skipLongPressTimer) {
-            clearTimeout(skipLongPressTimer);
-            skipLongPressTimer = null;
-        }
         if (skipFastForwardInterval) {
             clearInterval(skipFastForwardInterval);
             skipFastForwardInterval = null;
         }
         skipIsLongPressing = false;
-        // Reset the flag after a delay to allow click event to check it
-        setTimeout(() => {
-            skipWasLongPress = false;
-        }, 100);
     }
 
     function startBackFastForward() {
         if (backIsLongPressing) return; // Prevent multiple intervals
         backIsLongPressing = true;
-        backWasLongPress = true;
 
         // Fast backward every 100ms during long press (10 times per second) 
         backFastForwardInterval = setInterval(() => {
-            if (!backButton.disabled) {
+            if (!backButton.disabled && backIsLongPressing) {
                 debugNavigation('BACK FAST FORWARD', currentSujetId, true);
                 loadAdjacentSujet('prev');
             } else {
@@ -874,19 +848,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function stopBackFastForward() {
-        if (backLongPressTimer) {
-            clearTimeout(backLongPressTimer);
-            backLongPressTimer = null;
-        }
         if (backFastForwardInterval) {
             clearInterval(backFastForwardInterval);
             backFastForwardInterval = null;
         }
         backIsLongPressing = false;
-        // Reset the flag after a delay to allow click event to check it
-        setTimeout(() => {
-            backWasLongPress = false;
-        }, 100);
     }
 
     // === MOBILE-FIRST APPROACH ===
@@ -898,48 +864,74 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!skipButton.disabled) {
             e.preventDefault(); // Prevent mouse events and click
             skipWasLongPress = false;
-            skipLongPressTimer = setTimeout(startSkipFastForward, 300);
+            skipLongPressTimer = setTimeout(() => {
+                skipWasLongPress = true;
+                startSkipFastForward();
+            }, 300);
         }
     });
 
     skipButton.addEventListener('touchend', (e) => {
         e.preventDefault(); // Prevent mouse events and click
+        clearTimeout(skipLongPressTimer);
         stopSkipFastForward();
-        // If it wasn't a long press, trigger normal skip
+
+        // If it wasn't a long press, trigger normal skip after a short delay
         if (!skipWasLongPress) {
             setTimeout(() => {
-                if (!skipWasLongPress) {
-                    loadAdjacentSujet('next');
-                }
-            }, 10);
+                loadAdjacentSujet('next');
+            }, 50);
         }
+
+        // Reset the flag after a delay
+        setTimeout(() => {
+            skipWasLongPress = false;
+        }, 150);
     });
 
-    skipButton.addEventListener('touchcancel', stopSkipFastForward);
+    skipButton.addEventListener('touchcancel', (e) => {
+        e.preventDefault();
+        clearTimeout(skipLongPressTimer);
+        stopSkipFastForward();
+        skipWasLongPress = false;
+    });
 
     // Touch events for mobile - back button
     backButton.addEventListener('touchstart', (e) => {
         if (!backButton.disabled) {
             e.preventDefault(); // Prevent mouse events and click
             backWasLongPress = false;
-            backLongPressTimer = setTimeout(startBackFastForward, 300);
+            backLongPressTimer = setTimeout(() => {
+                backWasLongPress = true;
+                startBackFastForward();
+            }, 300);
         }
     });
 
     backButton.addEventListener('touchend', (e) => {
         e.preventDefault(); // Prevent mouse events and click
+        clearTimeout(backLongPressTimer);
         stopBackFastForward();
-        // If it wasn't a long press, trigger normal back
+
+        // If it wasn't a long press, trigger normal back after a short delay
         if (!backWasLongPress) {
             setTimeout(() => {
-                if (!backWasLongPress) {
-                    loadAdjacentSujet('prev');
-                }
-            }, 10);
+                loadAdjacentSujet('prev');
+            }, 50);
         }
+
+        // Reset the flag after a delay
+        setTimeout(() => {
+            backWasLongPress = false;
+        }, 150);
     });
 
-    backButton.addEventListener('touchcancel', stopBackFastForward);
+    backButton.addEventListener('touchcancel', (e) => {
+        e.preventDefault();
+        clearTimeout(backLongPressTimer);
+        stopBackFastForward();
+        backWasLongPress = false;
+    });
 
     // Debug function to track navigation
     function debugNavigation(action, sujetId, wasLongPress) {
@@ -961,7 +953,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 20);
     });
     deleteButton.addEventListener('click', handleDeleteSujet);
-    sortOrderButton.addEventListener('click', handleSortOrderToggle);
     quickSparkButton.addEventListener('click', handleQuickSpark);
     favoriteButton.addEventListener('click', toggleFavorite);
     editTitleButton.addEventListener('click', showTitleEditForm);
@@ -1033,7 +1024,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         updateToggleAppearance();
         updateSujetCount();
-        loadNextSujet();
+        // Start at the last (newest) sujet for intuitive ascending navigation
+        loadEdgeSujet('last');
     }
 
     initializeApp();

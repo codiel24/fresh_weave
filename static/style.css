@@ -60,8 +60,8 @@ h3 {
 
 .sujet-header {
     margin-bottom: 0.25em;
-    margin-top: 8px;
-    /* Added spacing above title matching button gaps */
+    margin-top: 16px;
+    /* Increased spacing above title to match below people buttons */
     min-height: 2.8em;
     /* Fixed height for approximately 2 lines */
     max-height: 2.8em;
@@ -558,6 +558,19 @@ input[type="text"] {
     border-color: #8b96fc;
 }
 
+/* Favorite button when used as a tag toggle */
+#favorite-button.tag-toggle {
+    background-color: #11B58F;
+    color: white;
+    border-color: #11B58F;
+}
+
+#favorite-button.tag-toggle:hover {
+    background-color: #0e9d7a;
+    color: white;
+    border-color: #0e9d7a;
+}
+
 .controls {
     margin-top: 20px;
     text-align: center;
@@ -717,7 +730,7 @@ input[type="text"] {
 /* Save button */
 .save-button {
     background-color: #C3FD9B;
-    /* Soft green from your palette */
+    /* Light green to match favorite button's original color */
     color: #333;
     min-width: 40px;
     padding: 8px 10px;
@@ -781,7 +794,7 @@ input[type="text"] {
 #quick-spark-button,
 #new-sujet-button {
     background-color: #C3FD9B;
-    /* Same as save button - soft green */
+    /* Light green to match favorite button's original color */
     color: #333;
 }
 
