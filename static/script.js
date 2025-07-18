@@ -812,6 +812,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('[DEBUG] startSkipFastForward called, skipIsLongPressing:', skipIsLongPressing);
         if (skipIsLongPressing) return; // Prevent multiple intervals
         skipIsLongPressing = true;
+        skipWasLongPress = true; // Set the flag here to ensure it's set before touchend
         console.log('[DEBUG] Starting skip fast forward interval');
 
         // Fast forward every 100ms during long press (10 times per second)
@@ -840,6 +841,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function startBackFastForward() {
         if (backIsLongPressing) return; // Prevent multiple intervals
         backIsLongPressing = true;
+        backWasLongPress = true; // Set the flag here to ensure it's set before touchend
 
         // Fast backward every 100ms during long press (10 times per second) 
         backFastForwardInterval = setInterval(() => {
@@ -873,8 +875,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('[DEBUG] Skip touchstart - setting timer');
             skipLongPressTimer = setTimeout(() => {
                 console.log('[DEBUG] Skip long press timer fired - starting fast forward');
-                skipWasLongPress = true;  // Set flag BEFORE starting fast forward
-                startSkipFastForward();
+                startSkipFastForward(); // Flag will be set inside this function
             }, 300); // Back to 300ms as requested
         }
     });
@@ -917,8 +918,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('[DEBUG] Back touchstart - setting timer');
             backLongPressTimer = setTimeout(() => {
                 console.log('[DEBUG] Back long press timer fired - starting fast forward');
-                backWasLongPress = true;  // Set flag BEFORE starting fast forward
-                startBackFastForward();
+                startBackFastForward(); // Flag will be set inside this function
             }, 300); // Back to 300ms as requested
         }
     });
