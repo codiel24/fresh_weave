@@ -873,9 +873,9 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('[DEBUG] Skip touchstart - setting timer');
             skipLongPressTimer = setTimeout(() => {
                 console.log('[DEBUG] Skip long press timer fired - starting fast forward');
-                skipWasLongPress = true;
+                skipWasLongPress = true;  // Set flag BEFORE starting fast forward
                 startSkipFastForward();
-            }, 300);
+            }, 300); // Back to 300ms as requested
         }
     });
 
@@ -885,20 +885,20 @@ document.addEventListener('DOMContentLoaded', () => {
         clearTimeout(skipLongPressTimer);
         stopSkipFastForward();
 
-        // If it wasn't a long press, trigger normal skip after a short delay
-        if (!skipWasLongPress) {
-            console.log('[DEBUG] Skip touchend - normal navigation');
-            setTimeout(() => {
-                loadAdjacentSujet('next');
-            }, 50);
-        } else {
-            console.log('[DEBUG] Skip touchend - was long press, no single navigation');
-        }
-
-        // Reset the flag after a delay
+        // Wait a moment to let the flag update, then check if it was a long press
         setTimeout(() => {
-            skipWasLongPress = false;
-        }, 150);
+            if (!skipWasLongPress) {
+                console.log('[DEBUG] Skip touchend - normal navigation');
+                loadAdjacentSujet('next');
+            } else {
+                console.log('[DEBUG] Skip touchend - was long press, no single navigation');
+            }
+            
+            // Reset the flag after a delay
+            setTimeout(() => {
+                skipWasLongPress = false;
+            }, 100);
+        }, 10);
     });
 
     skipButton.addEventListener('touchcancel', (e) => {
@@ -917,9 +917,9 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('[DEBUG] Back touchstart - setting timer');
             backLongPressTimer = setTimeout(() => {
                 console.log('[DEBUG] Back long press timer fired - starting fast forward');
-                backWasLongPress = true;
+                backWasLongPress = true;  // Set flag BEFORE starting fast forward
                 startBackFastForward();
-            }, 300);
+            }, 300); // Back to 300ms as requested
         }
     });
 
