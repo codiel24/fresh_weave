@@ -809,11 +809,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function startSkipFastForward() {
+        console.log('[DEBUG] startSkipFastForward called, skipIsLongPressing:', skipIsLongPressing);
         if (skipIsLongPressing) return; // Prevent multiple intervals
         skipIsLongPressing = true;
+        console.log('[DEBUG] Starting skip fast forward interval');
 
         // Fast forward every 100ms during long press (10 times per second)
         skipFastForwardInterval = setInterval(() => {
+            console.log('[DEBUG] Skip fast forward tick, disabled:', skipButton.disabled);
             if (!skipButton.disabled && skipIsLongPressing) {
                 debugNavigation('SKIP FAST FORWARD', currentSujetId, true);
                 // Fast forward just navigates, doesn't save
@@ -825,9 +828,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function stopSkipFastForward() {
+        console.log('[DEBUG] stopSkipFastForward called');
         if (skipFastForwardInterval) {
             clearInterval(skipFastForwardInterval);
             skipFastForwardInterval = null;
+            console.log('[DEBUG] Skip fast forward interval cleared');
         }
         skipIsLongPressing = false;
     }
@@ -861,10 +866,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Touch events for mobile - skip button
     skipButton.addEventListener('touchstart', (e) => {
+        console.log('[DEBUG] Skip touchstart fired');
         if (!skipButton.disabled) {
             e.preventDefault(); // Prevent mouse events and click
             skipWasLongPress = false;
+            console.log('[DEBUG] Skip touchstart - setting timer');
             skipLongPressTimer = setTimeout(() => {
+                console.log('[DEBUG] Skip long press timer fired - starting fast forward');
                 skipWasLongPress = true;
                 startSkipFastForward();
             }, 300);
@@ -872,15 +880,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     skipButton.addEventListener('touchend', (e) => {
+        console.log('[DEBUG] Skip touchend fired, skipWasLongPress:', skipWasLongPress);
         e.preventDefault(); // Prevent mouse events and click
         clearTimeout(skipLongPressTimer);
         stopSkipFastForward();
 
         // If it wasn't a long press, trigger normal skip after a short delay
         if (!skipWasLongPress) {
+            console.log('[DEBUG] Skip touchend - normal navigation');
             setTimeout(() => {
                 loadAdjacentSujet('next');
             }, 50);
+        } else {
+            console.log('[DEBUG] Skip touchend - was long press, no single navigation');
         }
 
         // Reset the flag after a delay
@@ -898,10 +910,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Touch events for mobile - back button
     backButton.addEventListener('touchstart', (e) => {
+        console.log('[DEBUG] Back touchstart fired');
         if (!backButton.disabled) {
             e.preventDefault(); // Prevent mouse events and click
             backWasLongPress = false;
+            console.log('[DEBUG] Back touchstart - setting timer');
             backLongPressTimer = setTimeout(() => {
+                console.log('[DEBUG] Back long press timer fired - starting fast forward');
                 backWasLongPress = true;
                 startBackFastForward();
             }, 300);
@@ -909,15 +924,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     backButton.addEventListener('touchend', (e) => {
+        console.log('[DEBUG] Back touchend fired, backWasLongPress:', backWasLongPress);
         e.preventDefault(); // Prevent mouse events and click
         clearTimeout(backLongPressTimer);
         stopBackFastForward();
 
         // If it wasn't a long press, trigger normal back after a short delay
         if (!backWasLongPress) {
+            console.log('[DEBUG] Back touchend - normal navigation');
             setTimeout(() => {
                 loadAdjacentSujet('prev');
             }, 50);
+        } else {
+            console.log('[DEBUG] Back touchend - was long press, no single navigation');
         }
 
         // Reset the flag after a delay
@@ -940,10 +959,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Event Listeners ---
     saveButton.addEventListener('click', () => handleSujetAction('save'));
-    
+
     // Skip and Back buttons: Touch events only (Chrome Android app)
     // No click events needed - touch handles everything
-    
+
     deleteButton.addEventListener('click', handleDeleteSujet);
     quickSparkButton.addEventListener('click', handleQuickSpark);
     favoriteButton.addEventListener('click', toggleFavorite);
