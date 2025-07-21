@@ -964,13 +964,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!backWasLongPress) {
             console.log('[DEBUG] Back touchend - normal navigation');
             setTimeout(() => {
-                if (history.length > 1) {
-                    history.pop();
-                    const previousSujetId = history[history.length - 1];
-                    loadSujetById(previousSujetId);
-                } else {
-                    backButton.disabled = true;
-                }
+                loadAdjacentSujet('prev');
             }, 50);
         } else {
             console.log('[DEBUG] Back touchend - was long press, no single navigation');
