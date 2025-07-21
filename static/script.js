@@ -39,7 +39,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const firstSujetButton = document.getElementById('first-sujet-button');
     const lastSujetButton = document.getElementById('last-sujet-button');
     const editTitleButton = document.getElementById('edit-title-button');
-    const editTitleContainer = document.getElementById('edit-title-container');
     const editTitleInput = document.getElementById('edit-title-input');
     const saveTitleButton = document.getElementById('save-title-button');
     const cancelTitleButton = document.getElementById('cancel-title-button');
@@ -190,7 +189,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const button = event.target;
         const value = button.dataset.value;
 
+        console.log('[TAG DEBUG] Toggle clicked:', {
+            value: value,
+            editMode: editMode,
+            currentSujetId: currentSujetId,
+            currentOffset: currentOffset,
+            isActive: button.classList.contains('active')
+        });
+
         if (editMode === 'filter') {
+            console.log('[TAG DEBUG] Filter mode - toggling and loading next');
             button.classList.toggle('active');
             updateActiveFilterStateFromUI();
             currentOffset = 0; // Reset offset to search from beginning with new filters
@@ -198,9 +206,14 @@ document.addEventListener('DOMContentLoaded', () => {
             updateSujetCount();
             loadNextSujet();
         } else { // 'tag' mode
-            if (!currentSujetData) return;
+            console.log('[TAG DEBUG] Tag mode - updating current sujet data');
+            if (!currentSujetData) {
+                console.log('[TAG DEBUG] ERROR: No currentSujetData available');
+                return;
+            }
             button.classList.toggle('active');
             updateSujetDataFromToggles();
+            console.log('[TAG DEBUG] After toggle - staying on same sujet:', currentSujetId);
         }
     }
 
@@ -396,17 +409,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function loadNextSujet() {
+        console.log('[NAV DEBUG] loadNextSujet called with offset:', currentOffset, 'mode:', editMode);
+
         // Get the active filters
         const filters = getActiveFiltersForQuery();
+        console.log('[NAV DEBUG] Active filters:', filters);
 
         // Build the query string for the request
         const queryParams = [`offset=${currentOffset}`];
         if (filters.tags.length) queryParams.push(`tags=${filters.tags.map(encodeURIComponent).join(',')}`);
         if (filters.people.length) queryParams.push(`people=${filters.people.map(encodeURIComponent).join(',')}`);
 
+        console.log('[NAV DEBUG] Query params:', queryParams.join('&'));
+
         try {
             const response = await fetch(`/get_sujet?${queryParams.join('&')}`);
             const data = await response.json();
+
+            console.log('[NAV DEBUG] Response data:', {
+                status: data.status,
+                sujetId: data.sujet?.id,
+                currentOffset: currentOffset
+            });
 
             if (data.status === 'ok' && data.sujet) {
                 // Always add the sujet to history, even if it's the first one
@@ -600,7 +624,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             await response.json();
-            loadAdjacentSujet('next');
+
+            // Only navigate after save actions, not delete (delete handles its own navigation)
+            if (actionType !== 'delete') {
+                loadAdjacentSujet('next');
+            }
         } catch (error) {
             console.error(`--- ERROR (handleSujetAction): Action ${actionType} failed:`, error);
             alert(`Action failed: ${error.message}. Please try again.`);
@@ -635,6 +663,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('[DEBUG] handleDeleteSujet: Response received:', data);
 
             // After deletion, move to the next sujet
+            console.log('[DELETE DEBUG] About to call loadAdjacentSujet(next) from deleted sujet:', currentSujetId);
             loadAdjacentSujet('next');
             updateSujetCount();
         } catch (error) {
@@ -688,16 +717,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function showTitleEditForm() {
         if (!currentSujetData) return;
+
+        console.log('[TITLE EDIT] showTitleEditForm called - inline editing');
+
         const titleText = originalSujetSpan.textContent.trim();
         editTitleInput.value = titleText;
+
+        // Hide original title and edit button, show input and save/cancel buttons
         originalSujetSpan.style.display = 'none';
-        editTitleContainer.classList.remove('hidden');
+        editTitleButton.style.display = 'none';
+        editTitleInput.style.display = 'inline';
+        saveTitleButton.style.display = 'inline';
+        cancelTitleButton.style.display = 'inline';
+
+        // Focus the input field
         editTitleInput.focus();
+        editTitleInput.select(); // Select all text for easy editing
     }
 
     function hideTitleEditForm() {
+        // Show original title and edit button, hide input and save/cancel buttons
         originalSujetSpan.style.display = 'inline';
-        editTitleContainer.classList.add('hidden');
+        editTitleButton.style.display = 'inline';
+        editTitleInput.style.display = 'none';
+        saveTitleButton.style.display = 'none';
+        cancelTitleButton.style.display = 'none';
     }
 
     function saveEditedTitle() {
@@ -884,7 +928,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('[DEBUG] Skip touchend fired, skipWasLongPress:', skipWasLongPress, 'skipIsLongPressing:', skipIsLongPressing);
         e.preventDefault(); // Prevent mouse events and click
         clearTimeout(skipLongPressTimer);
-        
+
         // Check if we were in long press mode before stopping
         const wasInLongPress = skipIsLongPressing;
         stopSkipFastForward();

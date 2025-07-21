@@ -16,7 +16,14 @@
             <div class="sujet-header" style="margin-bottom:0.1em;">
                 <span id="display-sujet-id" class="sujet-id-display"></span>
                 <p id="original-sujet" style="display:inline;"></p>
+                <!-- Inline edit field (initially hidden) -->
+                <input type="text" id="edit-title-input"
+                    style="display:none; width: 60%; font-size: inherit; border: 1px solid #ccc; padding: 2px;">
                 <button id="edit-title-button" class="button edit-button" title="Edit Title">✎</button>
+                <!-- Inline save/cancel buttons (initially hidden) -->
+                <button id="save-title-button" class="button save-button"
+                    style="display:none; margin-left: 5px;">Save</button>
+                <button id="cancel-title-button" class="button" style="display:none; margin-left: 2px;">Cancel</button>
             </div>
             <div class="info-line">
                 <div class="mode-toggle-container">
@@ -58,13 +65,6 @@
                 <button id="new-sujet-button" class="button">+ New</button>
                 <button id="favorite-button" class="button favorite-button">☆</button>
             </div>
-        </div>
-
-        <!-- Title Edit Container (initially hidden) -->
-        <div id="edit-title-container" class="edit-title-container hidden">
-            <input type="text" id="edit-title-input" placeholder="Edit title...">
-            <button id="save-title-button" class="button save-button">Save</button>
-            <button id="cancel-title-button" class="button">Cancel</button>
         </div>
 
         <!-- Modal for creating new sujets -->

@@ -85,35 +85,25 @@ def build_sujet_query(filters=None):
 
     if not filters.get('select_count'):
         sort_by = filters.get('sort_by', 'id')
-        sort_order = filters.get('sort_order', 'ASC').upper()
-        if sort_order not in ['ASC', 'DESC']:
-            sort_order = 'ASC'
 
         if sort_by == 'random':
             base_query += " ORDER BY RANDOM()"
         elif sort_by == 'id':
-            # Now that all sujets have dates (either real or fake), we can simplify the ordering
-            # and just sort by date_created and ID consistently
-            if sort_order == 'ASC':
-                # For ASC: oldest first - oldest timestamp, then lowest ID
-                base_query += " ORDER BY date_created ASC, id ASC"
-            else:
-                # For DESC: newest first - newest timestamp, then highest ID
-                base_query += " ORDER BY date_created DESC, id DESC"
+            # Simple chronological ordering by creation date, then ID
+            base_query += " ORDER BY date_created ASC, id ASC"
 
     return base_query, query_params
 
 # --- Data Access Functions for App ---
 
 
-def get_next_sujet_by_filter(offset, tags, people, sort_order):
+def get_next_sujet_by_filter(offset, tags, people):
     """Fetches the next sujet based on filters and increments its view count."""
     db = get_db()
     filters = {
         'tags': tags,
         'people': people,
-        'sort_by': 'id',
-        'sort_order': sort_order
+        'sort_by': 'id'
     }
     query, params = build_sujet_query(filters)
 
@@ -163,8 +153,14 @@ def get_random_sujet_from_db():
     return None
 
 
-def get_first_or_last_sujet_from_db(first=True, sort_order='ASC', tags=None, people=None):
-    """Fetches the first or last sujet from the database based on sort order."""
+def get_first_or_last_sujet_from_db(first=True, tags=None, people=None):
+    """Fetches the first or last sujet from the database.
+
+    Args:
+        first: True for chronologically first (lowest ID), False for last (highest ID)
+        tags: Tag filters
+        people: People filters
+    """
     db = get_db()
 
     # Build query with filters
@@ -175,24 +171,19 @@ def get_first_or_last_sujet_from_db(first=True, sort_order='ASC', tags=None, peo
     if 'ORDER BY' in base_query:
         base_query = base_query.split('ORDER BY')[0].strip()
 
-    # Determine the ORDER BY direction based on first/last and sort_order
+    # Determine ORDER BY direction based on chronological position
     if first:
-        if sort_order.upper() == 'ASC':
-            # First in ASC = lowest ID
-            order = "ASC"
-        else:
-            # First in DESC = highest ID
-            order = "DESC"
+        # First = chronologically first = lowest ID
+        order = "ASC"
     else:
-        if sort_order.upper() == 'ASC':
-            # Last in ASC = highest ID
-            order = "DESC"
-        else:
-            # Last in DESC = lowest ID
-            order = "ASC"
+        # Last = chronologically last = highest ID
+        order = "DESC"
 
     # Add ORDER BY clause
     base_query += f" ORDER BY id {order} LIMIT 1"
+
+    print(
+        f"[FIRST/LAST DEBUG] Getting {'first' if first else 'last'} sujet, query: {base_query}")
 
     # Execute query and update view count
     sujet = db.execute(base_query, params).fetchone()
@@ -268,11 +259,15 @@ def get_adjacent_sujet(sujet_id, tags, people, direction):
     Returns:
         The adjacent sujet or None if not found
     """
+    print(
+        f"[ADJACENT DEBUG] Called with sujet_id={sujet_id}, direction={direction}, tags={tags}, people={people}")
+
     db = get_db()
 
     # Get the current sujet's ID for comparison (ID is more reliable than dates)
     current_sujet = get_sujet_by_id(sujet_id)
     if not current_sujet:
+        print(f"[ADJACENT DEBUG] Current sujet {sujet_id} not found!")
         return None
 
     # Build base query with filters
@@ -281,6 +276,8 @@ def get_adjacent_sujet(sujet_id, tags, people, direction):
         'people': people
     }
     base_query, params = build_sujet_query(filters)
+    print(f"[ADJACENT DEBUG] Base query before modification: {base_query}")
+    print(f"[ADJACENT DEBUG] Base params: {params}")
 
     # Remove existing ORDER BY clause if present
     if 'ORDER BY' in base_query:
@@ -308,16 +305,24 @@ def get_adjacent_sujet(sujet_id, tags, people, direction):
     # Add ORDER BY and LIMIT
     base_query += f" ORDER BY {order_by} LIMIT 1"
 
+    print(f"[ADJACENT DEBUG] Final query: {base_query}")
+    print(f"[ADJACENT DEBUG] Final params: {params}")
+
     # Execute query
     sujet = db.execute(base_query, params).fetchone()
 
     if sujet:
+        print(
+            f"[ADJACENT DEBUG] Found adjacent sujet: {sujet['id']} - {sujet['original_sujet']}")
         # Increment view count
         db.execute(
             'UPDATE sujets SET view_count = view_count + 1 WHERE id = ?', (sujet['id'],))
         db.commit()
         # Re-fetch to get updated view count
         return get_sujet_by_id(sujet['id'])
+    else:
+        print(f"[ADJACENT DEBUG] No adjacent sujet found")
+        return None
 
     return None
 

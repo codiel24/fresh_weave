@@ -58,7 +58,6 @@ def get_sujet():
     offset = request.args.get('offset', 0, type=int)
     tags_str = request.args.get('tags', '')
     people_str = request.args.get('people', '')
-    sort_order = session.get('sort_order', 'DESC')
 
     tags = [tag.strip() for tag in tags_str.split(
         ',') if tag.strip()] if tags_str else []
@@ -66,7 +65,7 @@ def get_sujet():
               if person.strip()] if people_str else []
 
     sujet = db_operations.get_next_sujet_by_filter(
-        offset, tags, people, sort_order)
+        offset, tags, people)
 
     if sujet:
         return jsonify({'status': 'ok', 'sujet': dict(sujet)})
@@ -110,10 +109,7 @@ def get_random_sujet():
 
 @app.route('/first')
 def first():
-    """Fetches the very first sujet by its ID."""
-    # Get the current sort order from session
-    sort_order = session.get('sort_order', 'DESC')
-
+    """Fetches the very first sujet by its ID (chronologically first, regardless of sort order)."""
     # Get filter parameters
     tags_str = request.args.get('tags', '')
     people_str = request.args.get('people', '')
@@ -122,8 +118,9 @@ def first():
     people = [person.strip() for person in people_str.split(',')
               if person.strip()] if people_str else []
 
+    # Always get chronologically first (lowest ID) regardless of sort order
     sujet = db_operations.get_first_or_last_sujet_from_db(
-        first=True, sort_order=sort_order, tags=tags, people=people)
+        first=True, tags=tags, people=people)
     if sujet:
         return jsonify({'status': 'ok', 'sujet': dict(sujet)})
     else:
@@ -132,10 +129,7 @@ def first():
 
 @app.route('/last')
 def last():
-    """Fetches the very last sujet by its ID."""
-    # Get the current sort order from session
-    sort_order = session.get('sort_order', 'DESC')
-
+    """Fetches the very last sujet by its ID (chronologically last, regardless of sort order)."""
     # Get filter parameters
     tags_str = request.args.get('tags', '')
     people_str = request.args.get('people', '')
@@ -144,8 +138,9 @@ def last():
     people = [person.strip() for person in people_str.split(',')
               if person.strip()] if people_str else []
 
+    # Always get chronologically last (highest ID) regardless of sort order
     sujet = db_operations.get_first_or_last_sujet_from_db(
-        first=False, sort_order=sort_order, tags=tags, people=people)
+        first=False, tags=tags, people=people)
     if sujet:
         return jsonify({'status': 'ok', 'sujet': dict(sujet)})
     else:
