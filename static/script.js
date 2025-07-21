@@ -686,31 +686,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function loadEdgeSujet(edge) {
-        try {
-            const response = await fetch(`/${edge}`);
-            const data = await response.json();
-            if (data.status === 'ok' && data.sujet) {
-                // Add to history if this is a new sujet
-                if (history.length === 0 || history[history.length - 1] !== data.sujet.id) {
-                    history.push(data.sujet.id);
-                    if (history.length > historySize) history.shift();
-                }
-
-                currentSujetData = data.sujet;
-                currentSujetId = data.sujet.id;
-                displaySujet(data.sujet);
-
-                // Update back button state
-                backButton.disabled = history.length <= 1;
-            } else {
-                handleLoadError(`Error loading ${edge} sujet: ${data.message || 'Unknown error'}`);
-            }
-        } catch (error) {
-            handleLoadError(`Network error loading ${edge} sujet: ${error.message}`);
-        }
-    }
-
     function showTitleInput(mode, currentTitle = '') {
         console.log(`[TITLE INPUT] showTitleInput called - mode: ${mode}`);
 
