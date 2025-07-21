@@ -16,8 +16,8 @@
             <div class="sujet-header" style="margin-bottom:0.1em;">
                 <span id="display-sujet-id" class="sujet-id-display"></span>
                 <p id="original-sujet" style="display:inline;"></p>
-                <!-- Inline edit field (initially hidden) -->
-                <input type="text" id="edit-title-input"
+                <!-- Universal title input field (initially hidden) -->
+                <input type="text" id="title-input"
                     style="display:none; width: 60%; font-size: inherit; border: 1px solid #ccc; padding: 2px;">
                 <button id="edit-title-button" class="button edit-button" title="Edit Title">✎</button>
                 <!-- Inline save/cancel buttons (initially hidden) -->
@@ -64,22 +64,6 @@
                 <button id="quick-spark-button" class="button">Quick</button>
                 <button id="new-sujet-button" class="button">+ New</button>
                 <button id="favorite-button" class="button favorite-button">☆</button>
-            </div>
-        </div>
-
-        <!-- Modal for creating new sujets -->
-        <div id="new-sujet-modal" class="modal hidden">
-            <div class="modal-content">
-                <span id="close-modal" class="close-button">&times;</span>
-                <h2>Add New Sujet</h2>
-                <div class="modal-form">
-                    <label for="new-sujet-title">Title:</label>
-                    <input type="text" id="new-sujet-title" placeholder="Enter sujet title...">
-                    <div class="modal-buttons">
-                        <button id="create-sujet-button" class="button save-button">Create</button>
-                        <button id="cancel-sujet-button" class="button">Cancel</button>
-                    </div>
-                </div>
             </div>
         </div>
 

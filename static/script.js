@@ -39,20 +39,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const firstSujetButton = document.getElementById('first-sujet-button');
     const lastSujetButton = document.getElementById('last-sujet-button');
     const editTitleButton = document.getElementById('edit-title-button');
-    const editTitleInput = document.getElementById('edit-title-input');
+    const titleInput = document.getElementById('title-input');
     const saveTitleButton = document.getElementById('save-title-button');
     const cancelTitleButton = document.getElementById('cancel-title-button');
 
     const sujetContentDiv = document.getElementById('sujet-content');
     const noMoreSujetsDiv = document.getElementById('no-more-sujets');
 
-    // --- DOM Elements for New Sujet Modal ---
+    // --- DOM Elements for New Sujet ---
     const newSujetButton = document.getElementById('new-sujet-button');
-    const newSujetModal = document.getElementById('new-sujet-modal');
-    const closeModalButton = document.getElementById('close-modal');
-    const newSujetTitleInput = document.getElementById('new-sujet-title');
-    const createSujetButton = document.getElementById('create-sujet-button');
-    const cancelSujetButton = document.getElementById('cancel-sujet-button');
 
     // --- State Variables ---
     let currentSujetId = null;
@@ -61,6 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const history = [];
     const historySize = 10;
     let editMode = 'filter'; // 'filter' or 'tag'
+    let titleEditMode = null; // 'edit' or 'new' - tracks what we're doing with the title input
     let activeFilterState = { tags: [], people: [] };
 
     // Abbreviated tag display mapping for mobile compactness
@@ -715,106 +711,119 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function showTitleEditForm() {
-        if (!currentSujetData) return;
+    function showTitleInput(mode, currentTitle = '') {
+        console.log(`[TITLE INPUT] showTitleInput called - mode: ${mode}`);
 
-        console.log('[TITLE EDIT] showTitleEditForm called - inline editing');
+        titleEditMode = mode;
+        titleInput.value = currentTitle;
 
-        const titleText = originalSujetSpan.textContent.trim();
-        editTitleInput.value = titleText;
+        // Hide original title and edit button (if editing existing)
+        if (mode === 'edit') {
+            originalSujetSpan.style.display = 'none';
+            editTitleButton.style.display = 'none';
+        }
 
-        // Hide original title and edit button, show input and save/cancel buttons
-        originalSujetSpan.style.display = 'none';
-        editTitleButton.style.display = 'none';
-        editTitleInput.style.display = 'inline';
+        // Show input and save/cancel buttons
+        titleInput.style.display = 'inline';
         saveTitleButton.style.display = 'inline';
         cancelTitleButton.style.display = 'inline';
 
         // Focus the input field
-        editTitleInput.focus();
-        editTitleInput.select(); // Select all text for easy editing
+        titleInput.focus();
+        if (currentTitle) {
+            titleInput.select(); // Select all text for easy editing
+        }
     }
 
-    function hideTitleEditForm() {
-        // Show original title and edit button, hide input and save/cancel buttons
-        originalSujetSpan.style.display = 'inline';
-        editTitleButton.style.display = 'inline';
-        editTitleInput.style.display = 'none';
+    function hideTitleInput() {
+        console.log(`[TITLE INPUT] hideTitleInput called - was mode: ${titleEditMode}`);
+
+        // Show original title and edit button if we were editing
+        if (titleEditMode === 'edit') {
+            originalSujetSpan.style.display = 'inline';
+            editTitleButton.style.display = 'inline';
+        }
+
+        // Hide input and save/cancel buttons
+        titleInput.style.display = 'none';
         saveTitleButton.style.display = 'none';
         cancelTitleButton.style.display = 'none';
+
+        titleEditMode = null;
     }
 
-    function saveEditedTitle() {
-        if (!currentSujetData || !currentSujetId) return;
-        const newTitle = editTitleInput.value.trim();
-        if (!newTitle) {
-            alert('Title cannot be empty');
-            return;
-        }
-        fetch(`/update_title/${currentSujetId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title: newTitle })
-        })
-            .then(response => {
-                if (!response.ok) throw new Error('Failed to update title');
-                return response.json();
-            })
-            .then(data => {
-                originalSujetSpan.textContent = newTitle;
-                hideTitleEditForm();
-                if (currentSujetData) {
-                    const idPrefix = currentSujetData.original_sujet.match(/^ID:\s*(\d+)\s*-\s*/);
-                    if (idPrefix && idPrefix[0]) {
-                        currentSujetData.original_sujet = idPrefix[0] + newTitle;
-                    } else {
-                        currentSujetData.original_sujet = `ID: ${currentSujetId} - ${newTitle}`;
-                    }
-                }
-            })
-            .catch(error => {
-                console.error('Error updating title:', error);
-                alert('Failed to update title. Please try again.');
-            });
+    // Wrapper functions for specific use cases
+    function startEditingTitle() {
+        if (!currentSujetData) return;
+        const titleText = originalSujetSpan.textContent.trim();
+        showTitleInput('edit', titleText);
     }
 
-    function openNewSujetModal() {
-        newSujetTitleInput.value = '';
-        newSujetModal.classList.remove('hidden');
-        newSujetTitleInput.focus();
+    function startCreatingNewSujet() {
+        showTitleInput('new', '');
     }
 
-    function closeNewSujetModal() {
-        newSujetModal.classList.add('hidden');
-    }
-
-    async function createNewSujet() {
-        const title = newSujetTitleInput.value.trim();
+    async function saveTitleAction() {
+        const title = titleInput.value.trim();
         if (!title) {
             alert('Title cannot be empty');
             return;
         }
+
         try {
-            const response = await fetch('/add_sujet', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title: title })
-            });
-            const result = await response.json();
-            if (result.status === 'success') {
-                closeNewSujetModal();
-                if (result.sujet && result.sujet.id) {
-                    currentSujetData = result.sujet;
-                    currentSujetId = result.sujet.id;
-                    displaySujet(result.sujet);
+            if (titleEditMode === 'edit') {
+                // Update existing sujet title
+                if (!currentSujetData || !currentSujetId) return;
+
+                const response = await fetch(`/update_title/${currentSujetId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title: title })
+                });
+
+                if (!response.ok) throw new Error('Failed to update title');
+                const data = await response.json();
+
+                // Update the display
+                originalSujetSpan.textContent = title;
+                if (currentSujetData) {
+                    const idPrefix = currentSujetData.original_sujet.match(/^ID:\s*(\d+)\s*-\s*/);
+                    if (idPrefix && idPrefix[0]) {
+                        currentSujetData.original_sujet = idPrefix[0] + title;
+                    } else {
+                        currentSujetData.original_sujet = `ID: ${currentSujetId} - ${title}`;
+                    }
                 }
-            } else {
-                console.error('Error creating sujet:', result.message || 'Unknown error');
+
+            } else if (titleEditMode === 'new') {
+                // Create new sujet
+                const response = await fetch('/add_sujet', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title: title })
+                });
+
+                const result = await response.json();
+                if (result.status === 'success') {
+                    if (result.sujet && result.sujet.id) {
+                        currentSujetData = result.sujet;
+                        currentSujetId = result.sujet.id;
+                        displaySujet(result.sujet);
+                    }
+                } else {
+                    throw new Error(result.message || 'Failed to create sujet');
+                }
             }
+
+            hideTitleInput();
+
         } catch (error) {
-            console.error('Error creating sujet:', error);
+            console.error('Error saving title:', error);
+            alert('Failed to save. Please try again.');
         }
-    }    // --- Fast Forward Long Press Implementation ---
+    }
+
+    // --- Fast Forward Long Press Implementation ---
     let skipLongPressTimer = null;
     let skipFastForwardInterval = null;
     let skipIsLongPressing = false;
@@ -1013,9 +1022,9 @@ document.addEventListener('DOMContentLoaded', () => {
     deleteButton.addEventListener('click', handleDeleteSujet);
     quickSparkButton.addEventListener('click', handleQuickSpark);
     favoriteButton.addEventListener('click', toggleFavorite);
-    editTitleButton.addEventListener('click', showTitleEditForm);
-    saveTitleButton.addEventListener('click', saveEditedTitle);
-    cancelTitleButton.addEventListener('click', hideTitleEditForm);
+    editTitleButton.addEventListener('click', startEditingTitle);
+    saveTitleButton.addEventListener('click', saveTitleAction);
+    cancelTitleButton.addEventListener('click', hideTitleInput);
     firstSujetButton.addEventListener('click', () => loadEdgeSujet('first'));
     lastSujetButton.addEventListener('click', () => loadEdgeSujet('last'));
 
@@ -1034,23 +1043,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // New Sujet Modal Event Listeners
-    newSujetButton.addEventListener('click', openNewSujetModal);
-    closeModalButton.addEventListener('click', closeNewSujetModal);
-    cancelSujetButton.addEventListener('click', closeNewSujetModal);
-    createSujetButton.addEventListener('click', createNewSujet);
-
-    // Close modal if clicking outside of it
-    window.addEventListener('click', (event) => {
-        if (event.target === newSujetModal) {
-            closeNewSujetModal();
-        }
-    });
+    // Unified Title Input Event Listeners
+    newSujetButton.addEventListener('click', startCreatingNewSujet);
 
     // Allow pressing Enter in the title input to submit
-    newSujetTitleInput.addEventListener('keypress', (event) => {
+    titleInput.addEventListener('keypress', (event) => {
         if (event.key === 'Enter') {
-            createNewSujet();
+            saveTitleAction();
         }
     });
 
