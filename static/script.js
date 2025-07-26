@@ -150,11 +150,20 @@ document.addEventListener('DOMContentLoaded', () => {
             selectAllBtn.textContent = 'All';
             selectAllBtn.id = 'select-all-tags';
             selectAllBtn.onclick = () => {
+                console.log('[SELECT ALL DEBUG] Tags Select All clicked, mode:', editMode);
                 const allBtns = container.querySelectorAll('.tag-toggle');
                 const anyInactive = Array.from(allBtns).some(btn => !btn.classList.contains('active'));
+                console.log('[SELECT ALL DEBUG] anyInactive:', anyInactive, 'will', anyInactive ? 'activate' : 'deactivate', 'all tags');
+
                 allBtns.forEach(btn => btn.classList.toggle('active', anyInactive));
-                if (editMode === 'filter') updateActiveFilterStateFromUI();
-                else updateSujetDataFromToggles();
+
+                if (editMode === 'filter') {
+                    updateActiveFilterStateFromUI();
+                    updateSujetCount();
+                    console.log('[SELECT ALL DEBUG] Filter state updated:', activeFilterState.tags);
+                } else {
+                    updateSujetDataFromToggles();
+                }
             };
             // Insert the All button after the favorite button
             if (existingFavBtn) {
@@ -171,11 +180,20 @@ document.addEventListener('DOMContentLoaded', () => {
             selectAllBtn.textContent = 'All';
             selectAllBtn.id = 'select-all-people';
             selectAllBtn.onclick = () => {
+                console.log('[SELECT ALL DEBUG] People Select All clicked, mode:', editMode);
                 const allBtns = container.querySelectorAll('.person-toggle');
                 const anyInactive = Array.from(allBtns).some(btn => !btn.classList.contains('active'));
+                console.log('[SELECT ALL DEBUG] anyInactive:', anyInactive, 'will', anyInactive ? 'activate' : 'deactivate', 'all people');
+
                 allBtns.forEach(btn => btn.classList.toggle('active', anyInactive));
-                if (editMode === 'filter') updateActiveFilterStateFromUI();
-                else updateSujetDataFromToggles();
+
+                if (editMode === 'filter') {
+                    updateActiveFilterStateFromUI();
+                    updateSujetCount();
+                    console.log('[SELECT ALL DEBUG] Filter state updated:', activeFilterState.people);
+                } else {
+                    updateSujetDataFromToggles();
+                }
             };
             container.appendChild(selectAllBtn);
         }
@@ -185,35 +203,30 @@ document.addEventListener('DOMContentLoaded', () => {
         const button = event.target;
         const value = button.dataset.value;
 
-        console.log('[TAG DEBUG] Toggle clicked:', {
-            value: value,
-            editMode: editMode,
-            currentSujetId: currentSujetId,
-            currentOffset: currentOffset,
-            isActive: button.classList.contains('active')
-        });
+        console.log('[TOGGLE] Clicked:', value, 'mode:', editMode, 'was active:', button.classList.contains('active'));
+
+        // SIMPLE RULE: Toggle button state immediately and permanently
+        button.classList.toggle('active');
+        const isNowActive = button.classList.contains('active');
+
+        console.log('[TOGGLE] Now active:', isNowActive);
 
         if (editMode === 'filter') {
-            console.log('[TAG DEBUG] Filter mode - toggling and loading next');
-            button.classList.toggle('active');
+            // In filter mode: update internal state to match UI, update count
             updateActiveFilterStateFromUI();
-            currentOffset = 0; // Reset offset to search from beginning with new filters
-            // history.length = 0; // DO NOT clear history here. Let 'Back' work to previous filter state.
             updateSujetCount();
-            loadNextSujet();
-        } else { // 'tag' mode
-            console.log('[TAG DEBUG] Tag mode - updating current sujet data');
+            console.log('[TOGGLE] Filter state updated:', activeFilterState);
+        } else {
+            // In tag mode: update the current sujet's data from toggles
+            console.log('[TOGGLE] Tag mode - updating current sujet data');
             if (!currentSujetData) {
-                console.log('[TAG DEBUG] ERROR: No currentSujetData available');
+                console.log('[TOGGLE] ERROR: No currentSujetData available');
                 return;
             }
-            button.classList.toggle('active');
             updateSujetDataFromToggles();
-            console.log('[TAG DEBUG] After toggle - staying on same sujet:', currentSujetId);
+            console.log('[TOGGLE] Updated sujet data from toggles');
         }
-    }
-
-    function updateActiveFilterStateFromUI() {
+    } function updateActiveFilterStateFromUI() {
         const activeTags = Array.from(tagTogglesDiv.querySelectorAll('.tag-toggle.active')).map(btn => btn.dataset.value);
         const activePeople = Array.from(personTogglesDiv.querySelectorAll('.person-toggle.active')).map(btn => btn.dataset.value);
         activeFilterState = { tags: activeTags, people: activePeople };
@@ -235,20 +248,36 @@ document.addEventListener('DOMContentLoaded', () => {
         currentSujetData.person = activePeople.join(', ');
     }
 
-    function updateToggleAppearance() {
+    function updateToggleAppearance(reason = 'unknown') {
+        console.log('[TOGGLE APPEARANCE] Called for reason:', reason, 'mode:', editMode);
+
+        // CRITICAL: Only update appearance when loading new data, not during user interaction
+        if (reason !== 'new-sujet' && reason !== 'mode-change' && reason !== 'init') {
+            console.log('[TOGGLE APPEARANCE] Skipping - not a data load event');
+            return;
+        }
+
         if (editMode === 'filter') {
+            console.log('[TOGGLE APPEARANCE] Updating filter mode buttons based on activeFilterState:', activeFilterState);
             document.querySelectorAll('.tag-toggle').forEach(btn => {
-                btn.classList.toggle('active', activeFilterState.tags.includes(btn.dataset.value));
+                const shouldBeActive = activeFilterState.tags.includes(btn.dataset.value);
+                btn.classList.toggle('active', shouldBeActive);
             });
             document.querySelectorAll('.person-toggle').forEach(btn => {
-                btn.classList.toggle('active', activeFilterState.people.includes(btn.dataset.value));
+                const shouldBeActive = activeFilterState.people.includes(btn.dataset.value);
+                btn.classList.toggle('active', shouldBeActive);
             });
         } else { // 'tag' mode
-            if (!currentSujetData) return;
+            if (!currentSujetData) {
+                console.log('[TOGGLE APPEARANCE] No currentSujetData in tag mode, skipping');
+                return;
+            }
+            console.log('[TOGGLE APPEARANCE] Updating tag mode buttons based on current sujet');
             const sujetTags = parseCsvString(userTagsInput.value);
             let sujetPeople = parseCsvString(currentSujetData.person);
             // Default to all people if none assigned in tag mode
             if (sujetPeople.length === 0) sujetPeople = predefinedPeople.map(p => p.toLowerCase());
+
             document.querySelectorAll('.tag-toggle').forEach(btn => {
                 btn.classList.toggle('active', sujetTags.includes(btn.dataset.value));
             });
@@ -294,10 +323,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Update button appearance
         updateFavoriteButtonState();
 
-        // Update tag toggles if in tag mode
-        if (editMode === 'tag') {
-            updateToggleAppearance();
-        }
+        // Don't call updateToggleAppearance() - let user manual toggles remain as they are
     }
 
     function displaySujet(sujet) {
@@ -347,7 +373,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        updateToggleAppearance();
+        updateToggleAppearance('new-sujet');
         updateFavoriteButtonState();
 
         noMoreSujetsDiv.classList.add('hidden');
@@ -401,7 +427,12 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Network error fetching total sujet count:', error);
         }
 
-        sujetCountDisplay.textContent = `${filteredCount} / ${totalCount}`;
+        // In filter mode, show only the filtered count; in tag mode, show filtered/total
+        if (editMode === 'filter') {
+            sujetCountDisplay.textContent = `${filteredCount}`;
+        } else {
+            sujetCountDisplay.textContent = `${filteredCount} / ${totalCount}`;
+        }
     }
 
     async function loadNextSujet() {
@@ -1031,7 +1062,8 @@ document.addEventListener('DOMContentLoaded', () => {
     modeToggleRadios.forEach(radio => {
         radio.addEventListener('change', (e) => {
             editMode = e.target.value;
-            updateToggleAppearance(); // Ensure toggles reflect the new mode
+            updateToggleAppearance('mode-change'); // Ensure toggles reflect the new mode
+            updateSujetCount(); // Update counter display based on new mode
         });
     });
 
@@ -1044,7 +1076,7 @@ document.addEventListener('DOMContentLoaded', () => {
         activeFilterState.tags = predefinedTags.map(t => t.toLowerCase()); // Default to ALL tags
         activeFilterState.people = predefinedPeople.map(p => p.toLowerCase()); // Default to all people
 
-        updateToggleAppearance();
+        updateToggleAppearance('init');
         updateSujetCount();
         // Start at the last (newest) sujet for intuitive ascending navigation
         loadEdgeSujet('last');

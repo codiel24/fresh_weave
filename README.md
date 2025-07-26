@@ -6,6 +6,14 @@
 
 ## 🚨 CRITICAL NAVIGATION INFO 🚨
 
+### Button Behavior (DEFINITIVE)
+- **Back (`<`)**: Previous sujet chronologically (like media player back)
+- **Skip (`>`)**: Next sujet chronologically (like media player forward)
+- **Save**: Save data + navigate forward
+- **Delete**: Delete + navigate forward
+
+**IMPORTANT**: Back/Skip are simple chronological navigation - NOT history navigation, NOT marking as skipped.
+
 ### Long Press Navigation (Chrome Android)
 - **Short tap (< 300ms)**: Single navigation forward/backward
 - **Long press (≥ 300ms)**: Fast navigation (10 items/second)
@@ -56,12 +64,21 @@ Multiple async events (touchstart, timeout, touchend) with flag coordination cre
 
 ---
 
+## Toggle System Investigation (January 2025)
+
+**Issue Resolved**: Fixed counter display to show position format (1/5, 2/5) instead of just filtered count.
+
+**Issue Investigated**: Toggle buttons sometimes remain visually active after deselection, "All" button occasionally requires two clicks. Root cause identified as one button remaining inactive after sujet loading, but impact deemed too low for continued engineering effort.
+
+**Documentation**: See `TOGGLE_BUG_INVESTIGATION.md` for complete investigation history and debugging approach.
+
+---
+
 ## Features
 
-- **Navigate Sujets:** Browse through sujets sequentially (`<`, `>`), or jump to the first (`<<`) and last (`>>`) entries.
-- **Save, Skip, Delete:** Save notes and tags to a sujet, skip it, or remove it from the database. All actions navigate to the next sujet based on the current sort order.
-- **Sort:** Toggle the navigation order between ascending (`ASC`) and descending (`DESC`).
-- **Create & Edit:** Add new sujets via the `+ New` button or double-click a sujet's title to edit it.
+- **Navigate Sujets:** Browse through sujets sequentially using Back (`<`) and Skip (`>`) buttons, or jump to the first (`<<`) and last (`>>`) entries.
+- **Save, Skip, Delete:** Save notes and tags to a sujet, skip forward, or remove it from the database. Save and Delete navigate to the next sujet; Skip is pure forward navigation.
+- **Create & Edit:** Add new sujets via the `+ New` button or tap a sujet's title to edit it.
 
 ## Getting Started
 
@@ -115,10 +132,15 @@ The application will be available at `http://127.0.0.1:5000`.
 
 ### Controls
 
-- **Navigation:** Use the `<<`, `<`, `>`, `>>` buttons for navigation.
-- **Actions:** Use the `Save`, `Skip`, and `Delete` buttons to manage sujets.
-- **Sorting:** Click the `ASC`/`DESC` button to toggle the sort order.
-- **Add New:** Click `+ New` to open the dialog for creating a new sujet.
+- **Navigation:** 
+  - **Back (`<`)**: Navigate backward chronologically (previous sujet by ID)
+  - **Skip (`>`)**: Navigate forward chronologically (next sujet by ID)  
+  - **First (`<<`)** and **Last (`>>`)**: Jump to chronologically first/last sujets
+- **Actions:** 
+  - **Save**: Save notes/tags and navigate forward
+  - **Skip**: Navigate forward only (no marking/saving)
+  - **Delete**: Delete sujet and navigate forward
+- **Add New:** Click `+ New` to create a new sujet.
 
 ## Testing
 

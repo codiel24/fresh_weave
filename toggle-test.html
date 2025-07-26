@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toggle Behavior Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .test-controls {
+            margin: 10px 0;
+        }
+
+        button {
+            margin: 5px;
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+
+        .active {
+            background-color: #007cba;
+            color: white;
+        }
+
+        .tag-toggle,
+        .person-toggle {
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+
+        .select-all-button {
+            background-color: #e0e0e0;
+            border: 1px solid #999;
+        }
+
+        .log {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 10px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #f0f8ff;
+            border-left: 4px solid #007cba;
+        }
+
+        .test-case {
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 3px;
+        }
+
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Toggle Behavior Systematic Test</h1>
+
+    <div class="test-section">
+        <h2>Mode Selection</h2>
+        <div class="test-controls">
+            <label><input type="radio" name="edit-mode" value="filter" checked> Filter Mode</label>
+            <label><input type="radio" name="edit-mode" value="tag"> Tag Mode</label>
+        </div>
+        <div class="status" id="mode-status">Current Mode: Filter</div>
+    </div>
+
+    <div class="test-section">
+        <h2>Tag Toggles</h2>
+        <div id="tag-toggles"></div>
+        <div class="status">
+            <div>Active Tags: <span id="active-tags">[]</span></div>
+            <div>Expected Count: <span id="expected-count">0</span></div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Person Toggles</h2>
+        <div id="person-toggles"></div>
+        <div class="status">
+            <div>Active People: <span id="active-people">[]</span></div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Manual Test Instructions</h2>
+        <div class="test-controls">
+            <ol>
+                <li><strong>Filter Mode Test</strong>: Click "All" to deselect all tags, then sequentially select: AI,
+                    Work, Medical</li>
+                <li><strong>Expected</strong>: Each click should visibly toggle the button. Counter should update.</li>
+                <li><strong>Then</strong>: Deselect AI, Work, Medical in that order</li>
+                <li><strong>Expected</strong>: Each deselect should work predictably. No tags should remain selected.
+                </li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Tag Toggles</h2>
+        <div class="test-controls">
+            <button onclick="runAllTests()">Run All Tests</button>
+            <button onclick="runUserReportedBugTest()">Test User Bug Scenario</button>
+            <button onclick="clearLog()">Clear Log</button>
+        </div>
+        <div id="test-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Event Log</h2>
+        <div class="log" id="event-log"></div>
+    </div>
+
+    <script>
+        // Simulate the relevant parts of the Weave application
+        let editMode = 'filter';
+        let activeFilterState = { tags: [], people: [] };
+        let eventLog = [];
+
+        const predefinedTags = ['AI', 'Work', 'Medical', 'Science', 'History'];
+        const predefinedPeople = ['S', 'Fam', 'Stef', 'MD', 'AK'];
+
+        const tagTogglesDiv = document.getElementById('tag-toggles');
+        const personTogglesDiv = document.getElementById('person-toggles');
+        const modeToggleRadios = document.querySelectorAll('input[name="edit-mode"]');
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toISOString().substr(11, 12);
+            eventLog.push({ timestamp, message, type });
+            updateLogDisplay();
+        }
+
+        function updateLogDisplay() {
+            const logDiv = document.getElementById('event-log');
+            logDiv.innerHTML = eventLog.map(entry =>
+                `<div class="${entry.type}">[${entry.timestamp}] ${entry.message}</div>`
+            ).join('');
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearLog() {
+            eventLog = [];
+            updateLogDisplay();
+        }
+
+        function renderToggles(container, items, type) {
+            container.innerHTML = '';
+
+            items.forEach(item => {
+                const button = document.createElement('button');
+                button.textContent = item;
+                button.classList.add(`${type}-toggle`);
+                button.dataset.value = item.toLowerCase();
+                button.addEventListener('click', (e) => handleToggleClick(e, type));
+                container.appendChild(button);
+            });
+
+            // Add Select All button
+            const selectAllBtn = document.createElement('button');
+            selectAllBtn.className = 'select-all-button';
+            selectAllBtn.textContent = 'All';
+            selectAllBtn.onclick = () => handleSelectAll(type);
+            container.appendChild(selectAllBtn);
+        }
+
+        function handleToggleClick(event, type) {
+            const button = event.target;
+            const value = button.dataset.value;
+            const wasActive = button.classList.contains('active');
+
+            log(`Toggle clicked: ${type}=${value}, wasActive=${wasActive}, mode=${editMode}`);
+
+            // Toggle the button
+            button.classList.toggle('active');
+            const isNowActive = button.classList.contains('active');
+
+            log(`After toggle: ${type}=${value}, isNowActive=${isNowActive}`);
+
+            // Update state
+            if (editMode === 'filter') {
+                updateActiveFilterStateFromUI();
+                log(`Filter state updated: tags=[${activeFilterState.tags.join(',')}], people=[${activeFilterState.people.join(',')}]`);
+            }
+
+            updateDisplays();
+        }
+
+        function handleSelectAll(type) {
+            log(`Select All clicked for ${type}`);
+
+            const buttons = document.querySelectorAll(`.${type}-toggle`);
+            const anyInactive = Array.from(buttons).some(btn => !btn.classList.contains('active'));
+
+            log(`Select All: anyInactive=${anyInactive}, will ${anyInactive ? 'activate' : 'deactivate'} all`);
+
+            buttons.forEach(btn => {
+                const wasActive = btn.classList.contains('active');
+                btn.classList.toggle('active', anyInactive);
+                const isNowActive = btn.classList.contains('active');
+                if (wasActive !== isNowActive) {
+                    log(`  ${btn.dataset.value}: ${wasActive} -> ${isNowActive}`);
+                }
+            });
+
+            if (editMode === 'filter') {
+                updateActiveFilterStateFromUI();
+                log(`Filter state after Select All: tags=[${activeFilterState.tags.join(',')}], people=[${activeFilterState.people.join(',')}]`);
+            }
+
+            updateDisplays();
+        }
+
+        function updateActiveFilterStateFromUI() {
+            const activeTags = Array.from(tagTogglesDiv.querySelectorAll('.tag-toggle.active')).map(btn => btn.dataset.value);
+            const activePeople = Array.from(personTogglesDiv.querySelectorAll('.person-toggle.active')).map(btn => btn.dataset.value);
+
+            const oldTags = [...activeFilterState.tags];
+            const oldPeople = [...activeFilterState.people];
+
+            activeFilterState = { tags: activeTags, people: activePeople };
+
+            log(`State change: tags [${oldTags.join(',')}] -> [${activeTags.join(',')}]`);
+            log(`State change: people [${oldPeople.join(',')}] -> [${activePeople.join(',')}]`);
+        }
+
+        function updateDisplays() {
+            document.getElementById('active-tags').textContent = `[${activeFilterState.tags.join(', ')}]`;
+            document.getElementById('active-people').textContent = `[${activeFilterState.people.join(', ')}]`;
+            document.getElementById('expected-count').textContent = activeFilterState.tags.length + activeFilterState.people.length;
+        }
+
+        // Test cases
+        function runAllTests() {
+            const results = document.getElementById('test-results');
+            results.innerHTML = '<h3>Running Tests...</h3>';
+
+            clearLog();
+            let testResults = [];
+
+            // Test 1: Single toggle in filter mode
+            testResults.push(testSingleToggle());
+
+            // Test 2: Multiple toggles
+            testResults.push(testMultipleToggles());
+
+            // Test 3: Select All behavior
+            testResults.push(testSelectAllBehavior());
+
+            // Test 4: Mode switching
+            testResults.push(testModeSwitching());
+
+            // Test 5: Rapid toggle sequence
+            testResults.push(testRapidToggleSequence());
+
+            // Display results
+            const passed = testResults.filter(r => r.passed).length;
+            const total = testResults.length;
+
+            results.innerHTML = `
+                <h3>Test Results: ${passed}/${total} passed</h3>
+                ${testResults.map(r => `
+                    <div class="test-case ${r.passed ? 'success' : 'error'}">
+                        <strong>${r.name}</strong>: ${r.passed ? 'PASSED' : 'FAILED'}
+                        ${r.message ? `<br><small>${r.message}</small>` : ''}
+                    </div>
+                `).join('')}
+            `;
+        }
+
+        function testSingleToggle() {
+            // Reset state
+            resetToggles();
+            editMode = 'filter';
+
+            // Click AI tag
+            const aiButton = document.querySelector('[data-value="ai"]');
+            aiButton.click();
+
+            const expected = ['ai'];
+            const actual = activeFilterState.tags;
+            const passed = JSON.stringify(expected) === JSON.stringify(actual);
+
+            return {
+                name: 'Single Toggle Test',
+                passed,
+                message: passed ? '' : `Expected [${expected.join(',')}], got [${actual.join(',')}]`
+            };
+        }
+
+        function testMultipleToggles() {
+            resetToggles();
+            editMode = 'filter';
+
+            // Click AI, then Work
+            document.querySelector('[data-value="ai"]').click();
+            document.querySelector('[data-value="work"]').click();
+
+            const expected = ['ai', 'work'];
+            const actual = activeFilterState.tags.sort();
+            const passed = JSON.stringify(expected) === JSON.stringify(actual.sort());
+
+            return {
+                name: 'Multiple Toggles Test',
+                passed,
+                message: passed ? '' : `Expected [${expected.join(',')}], got [${actual.join(',')}]`
+            };
+        }
+
+        function testSelectAllBehavior() {
+            resetToggles();
+            editMode = 'filter';
+
+            // Click Select All for tags
+            const selectAllBtn = tagTogglesDiv.querySelector('.select-all-button');
+            selectAllBtn.click();
+
+            const expected = predefinedTags.map(t => t.toLowerCase());
+            const actual = activeFilterState.tags.sort();
+            const passed = JSON.stringify(expected.sort()) === JSON.stringify(actual);
+
+            return {
+                name: 'Select All Test',
+                passed,
+                message: passed ? '' : `Expected [${expected.join(',')}], got [${actual.join(',')}]`
+            };
+        }
+
+        function testModeSwitching() {
+            resetToggles();
+
+            // Set some tags in filter mode
+            editMode = 'filter';
+            document.querySelector('[data-value="ai"]').click();
+            const filterState = [...activeFilterState.tags];
+
+            // Switch to tag mode
+            editMode = 'tag';
+            document.querySelector('input[value="tag"]').checked = true;
+
+            // State should remain the same
+            const passed = JSON.stringify(filterState) === JSON.stringify(activeFilterState.tags);
+
+            return {
+                name: 'Mode Switching Test',
+                passed,
+                message: passed ? '' : 'Filter state changed when switching modes'
+            };
+        }
+
+        function testRapidToggleSequence() {
+            resetToggles();
+            editMode = 'filter';
+
+            // Rapid sequence: AI on, Work on, AI off, Medical on
+            const aiBtn = document.querySelector('[data-value="ai"]');
+            const workBtn = document.querySelector('[data-value="work"]');
+            const medicalBtn = document.querySelector('[data-value="medical"]');
+
+            aiBtn.click();        // AI on
+            workBtn.click();      // Work on
+            aiBtn.click();        // AI off
+            medicalBtn.click();   // Medical on
+
+            const expected = ['work', 'medical'].sort();
+            const actual = activeFilterState.tags.sort();
+            const passed = JSON.stringify(expected) === JSON.stringify(actual);
+
+            return {
+                name: 'Rapid Toggle Sequence Test',
+                passed,
+                message: passed ? '' : `Expected [${expected.join(',')}], got [${actual.join(',')}]`
+            };
+        }
+
+        function resetToggles() {
+            // Reset all buttons to inactive
+            document.querySelectorAll('.tag-toggle, .person-toggle').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Reset state
+            activeFilterState = { tags: [], people: [] };
+            updateDisplays();
+            log('--- RESET TOGGLES ---');
+        }
+
+        // Event listeners
+        modeToggleRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                editMode = e.target.value;
+                document.getElementById('mode-status').textContent = `Current Mode: ${editMode}`;
+                log(`Mode changed to: ${editMode}`);
+            });
+        });
+
+        // Initialize
+        renderToggles(tagTogglesDiv, predefinedTags, 'tag');
+        renderToggles(personTogglesDiv, predefinedPeople, 'person');
+        updateDisplays();
+
+        log('Toggle test system initialized');
+
+        function runUserReportedBugTest() {
+            const results = document.getElementById('test-results');
+            results.innerHTML = '<h3>Testing User Reported Bug Scenario...</h3>';
+            
+            clearLog();
+            resetToggles();
+            editMode = 'filter';
+            
+            log('=== SIMULATING USER BUG SCENARIO ===');
+            log('1. Starting in filter mode');
+            log('2. Deselecting all tags via Select All');
+            
+            // Step 1: Deselect all tags (simulate clicking "All" when all are selected)
+            // First make sure all are selected
+            const allButtons = document.querySelectorAll('.tag-toggle');
+            allButtons.forEach(btn => btn.classList.add('active'));
+            updateActiveFilterStateFromUI();
+            
+            // Now click Select All to deselect them
+            const selectAllBtn = tagTogglesDiv.querySelector('.select-all-button');
+            selectAllBtn.click();
+            
+            log('3. Sequentially selecting: AI, Work, Medical');
+            
+            // Step 2: Select AI, Work, Medical 
+            document.querySelector('[data-value="ai"]').click();
+            document.querySelector('[data-value="work"]').click();
+            document.querySelector('[data-value="medical"]').click();
+            
+            const afterSelect = [...activeFilterState.tags].sort();
+            log(`After selections: [${afterSelect.join(',')}]`);
+            
+            log('4. Deselecting in same order: AI, Work, Medical');
+            
+            // Step 3: Deselect in same order
+            document.querySelector('[data-value="ai"]').click();
+            document.querySelector('[data-value="work"]').click();
+            document.querySelector('[data-value="medical"]').click();
+            
+            const afterDeselect = [...activeFilterState.tags].sort();
+            log(`After deselections: [${afterDeselect.join(',')}]`);
+            
+            // Test result
+            const shouldBeEmpty = afterDeselect.length === 0;
+            const result = {
+                name: 'User Bug Scenario Test',
+                passed: shouldBeEmpty,
+                message: shouldBeEmpty ? 'All tags properly deselected' : `FAILED: Tags remain selected: [${afterDeselect.join(',')}]`
+            };
+            
+            results.innerHTML = `
+                <h3>User Bug Test Result</h3>
+                <div class="test-case ${result.passed ? 'success' : 'error'}">
+                    <strong>${result.name}</strong>: ${result.passed ? 'PASSED' : 'FAILED'}
+                    <br><small>${result.message}</small>
+                </div>
+            `;
+        }
+    </script>
+</body>
+
+</html>
