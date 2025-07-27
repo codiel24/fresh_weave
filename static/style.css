@@ -470,6 +470,7 @@ button:hover {
     position: relative;
 }
 
+/* AI suggestions discontinued - keeping for potential future use
 #ai-suggestion {
     font-family: Arial, sans-serif;
     font-size: 12px;
@@ -480,6 +481,7 @@ button:hover {
     overflow-y: auto;
     padding-right: 10px;
 }
+*/
 
 .sujet-metadata {
     margin-top: 5px;
@@ -518,6 +520,36 @@ input[type="text"] {
     box-sizing: border-box;
 }
 
+/* Specific styling for the user notes textarea */
+#user-notes {
+    min-height: 200px;
+    max-height: 400px;
+    overflow-y: auto;
+    resize: vertical;
+    line-height: 1.4;
+    scrollbar-width: thin;
+    scrollbar-color: #ccc #f0f0f0;
+}
+
+/* Custom scrollbar styling for WebKit browsers (Chrome, Safari) */
+#user-notes::-webkit-scrollbar {
+    width: 8px;
+}
+
+#user-notes::-webkit-scrollbar-track {
+    background: #f0f0f0;
+    border-radius: 4px;
+}
+
+#user-notes::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 4px;
+}
+
+#user-notes::-webkit-scrollbar-thumb:hover {
+    background: #aaa;
+}
+
 @media (max-width: 600px) {
 
     textarea,
@@ -525,6 +557,13 @@ input[type="text"] {
         padding: 6px 3px;
         font-size: 14px;
         margin-bottom: 4px;
+    }
+
+    /* Mobile-specific adjustments for notes textarea */
+    #user-notes {
+        min-height: 180px;
+        max-height: 350px;
+        font-size: 14px;
     }
 }
 
@@ -604,6 +643,54 @@ input[type="text"] {
     background-color: #6c757d;
     /* Default grey */
     color: white;
+}
+
+/* Search container styling */
+.search-container {
+    margin-bottom: 10px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.search-container.hidden {
+    display: none;
+}
+
+#search-input {
+    flex: 1;
+    min-width: 200px;
+    padding: 8px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+    background-color: white;
+}
+
+@media (max-width: 600px) {
+    #search-input {
+        min-width: 150px;
+        font-size: 0.9rem;
+    }
+
+    .search-container {
+        padding: 8px;
+        gap: 6px;
+    }
+}
+
+/* Search button styling */
+#search-button {
+    background-color: #17a2b8;
+    color: white;
+}
+
+#search-button:hover {
+    background-color: #138496;
 }
 
 .button:disabled {

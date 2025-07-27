@@ -58,14 +58,16 @@ def get_sujet():
     offset = request.args.get('offset', 0, type=int)
     tags_str = request.args.get('tags', '')
     people_str = request.args.get('people', '')
+    search_str = request.args.get('search', '')
 
     tags = [tag.strip() for tag in tags_str.split(
         ',') if tag.strip()] if tags_str else []
     people = [person.strip() for person in people_str.split(',')
               if person.strip()] if people_str else []
+    search = search_str.strip() if search_str else None
 
     sujet = db_operations.get_next_sujet_by_filter(
-        offset, tags, people)
+        offset, tags, people, search)
 
     if sujet:
         return jsonify({'status': 'ok', 'sujet': dict(sujet)})
@@ -78,12 +80,15 @@ def get_sujets_count():
     """Returns the count of sujets matching the given filter criteria."""
     tags_str = request.args.get('tags', '')
     people_str = request.args.get('people', '')
+    search_str = request.args.get('search', '')
+
     tags = [tag.strip() for tag in tags_str.split(
         ',') if tag.strip()] if tags_str else []
     people = [person.strip() for person in people_str.split(',')
               if person.strip()] if people_str else []
+    search = search_str.strip() if search_str else None
 
-    count = db_operations.get_sujets_count_by_filter(tags, people)
+    count = db_operations.get_sujets_count_by_filter(tags, people, search)
     return jsonify({'status': 'ok', 'count': count})
 
 
@@ -113,14 +118,17 @@ def first():
     # Get filter parameters
     tags_str = request.args.get('tags', '')
     people_str = request.args.get('people', '')
+    search_str = request.args.get('search', '')
+
     tags = [tag.strip() for tag in tags_str.split(
         ',') if tag.strip()] if tags_str else []
     people = [person.strip() for person in people_str.split(',')
               if person.strip()] if people_str else []
+    search = search_str.strip() if search_str else None
 
     # Always get chronologically first (lowest ID) regardless of sort order
     sujet = db_operations.get_first_or_last_sujet_from_db(
-        first=True, tags=tags, people=people)
+        first=True, tags=tags, people=people, search=search)
     if sujet:
         return jsonify({'status': 'ok', 'sujet': dict(sujet)})
     else:
@@ -133,14 +141,17 @@ def last():
     # Get filter parameters
     tags_str = request.args.get('tags', '')
     people_str = request.args.get('people', '')
+    search_str = request.args.get('search', '')
+
     tags = [tag.strip() for tag in tags_str.split(
         ',') if tag.strip()] if tags_str else []
     people = [person.strip() for person in people_str.split(',')
               if person.strip()] if people_str else []
+    search = search_str.strip() if search_str else None
 
     # Always get chronologically last (highest ID) regardless of sort order
     sujet = db_operations.get_first_or_last_sujet_from_db(
-        first=False, tags=tags, people=people)
+        first=False, tags=tags, people=people, search=search)
     if sujet:
         return jsonify({'status': 'ok', 'sujet': dict(sujet)})
     else:
@@ -227,6 +238,7 @@ def adjacent_sujet():
         direction: 'next' or 'prev' ('next' = forward in time, 'prev' = backward in time)
         tags:    optional comma-separated list
         people:  optional comma-separated list
+        search:  optional search term
     """
     sujet_id = request.args.get('id', type=int)
     if sujet_id is None:
@@ -238,13 +250,16 @@ def adjacent_sujet():
 
     tags_str = request.args.get('tags', '')
     people_str = request.args.get('people', '')
+    search_str = request.args.get('search', '')
 
     tags = [t.strip() for t in tags_str.split(
         ',') if t.strip()] if tags_str else []
     people = [p.strip() for p in people_str.split(
         ',') if p.strip()] if people_str else []
+    search = search_str.strip() if search_str else None
 
-    sujet = db_operations.get_adjacent_sujet(sujet_id, tags, people, direction)
+    sujet = db_operations.get_adjacent_sujet(
+        sujet_id, tags, people, direction, search)
     if sujet:
         return jsonify({'status': 'ok', 'sujet': dict(sujet)})
     else:

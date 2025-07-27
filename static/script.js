@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- DOM Elements ---
     const originalSujetSpan = document.getElementById('original-sujet');
     const displaySujetIdSpan = document.getElementById('display-sujet-id'); // Added for separate ID display
-    const aiSuggestionSpan = document.getElementById('ai-suggestion');
+    // const aiSuggestionSpan = document.getElementById('ai-suggestion'); // AI suggestions discontinued
     const userNotesTextarea = document.getElementById('user-notes');
     const userTagsInput = document.getElementById('user-tags');
     const tagTogglesDiv = document.getElementById('tag-toggles');
@@ -49,6 +49,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- DOM Elements for New Sujet ---
     const newSujetButton = document.getElementById('new-sujet-button');
 
+    // --- DOM Elements for Search ---
+    const searchButton = document.getElementById('search-button');
+    const searchContainer = document.getElementById('search-container');
+    const searchInput = document.getElementById('search-input');
+    const searchApplyButton = document.getElementById('search-apply-button');
+    const searchClearButton = document.getElementById('search-clear-button');
+
     // --- State Variables ---
     let currentSujetId = null;
     let currentSujetData = null;
@@ -57,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const historySize = 10;
     let editMode = 'filter'; // 'filter' or 'tag'
     let titleEditMode = null; // 'edit' or 'new' - tracks what we're doing with the title input
-    let activeFilterState = { tags: [], people: [] };
+    let activeFilterState = { tags: [], people: [], search: '' };
 
     // Abbreviated tag display mapping for mobile compactness
     const tagAbbreviations = {
@@ -350,7 +357,7 @@ document.addEventListener('DOMContentLoaded', () => {
             originalSujetSpan.removeAttribute('title');
         }
 
-        aiSuggestionSpan.textContent = sujet.ai_suggestion;
+        // aiSuggestionSpan.textContent = sujet.ai_suggestion; // AI suggestions discontinued
         userNotesTextarea.value = sujet.user_notes || '';
         userTagsInput.value = sujet.user_tags || '';
 
@@ -388,12 +395,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (editMode === 'filter') {
             return {
                 tags: activeFilterState.tags,
-                people: activeFilterState.people
+                people: activeFilterState.people,
+                search: activeFilterState.search
             };
         } else { // 'tag' mode or any other mode
             return {
                 tags: [],  // Send empty array to not filter by tags
-                people: [] // Send empty array to not filter by people
+                people: [], // Send empty array to not filter by people
+                search: activeFilterState.search // Keep search in tag mode too
             };
         }
     }
@@ -406,6 +415,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (filters.people && filters.people.length > 0) {
             queryParams.push(`people=${filters.people.map(encodeURIComponent).join(',')}`);
+        }
+        if (filters.search && filters.search.trim()) {
+            queryParams.push(`search=${encodeURIComponent(filters.search)}`);
         }
         const queryString = queryParams.join('&');
         let filteredCount = 0;
@@ -446,6 +458,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const queryParams = [`offset=${currentOffset}`];
         if (filters.tags.length) queryParams.push(`tags=${filters.tags.map(encodeURIComponent).join(',')}`);
         if (filters.people.length) queryParams.push(`people=${filters.people.map(encodeURIComponent).join(',')}`);
+        if (filters.search && filters.search.trim()) queryParams.push(`search=${encodeURIComponent(filters.search)}`);
 
         console.log('[NAV DEBUG] Query params:', queryParams.join('&'));
 
@@ -541,6 +554,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ];
         if (filters.tags.length) qp.push(`tags=${filters.tags.map(encodeURIComponent).join(',')}`);
         if (filters.people.length) qp.push(`people=${filters.people.map(encodeURIComponent).join(',')}`);
+        if (filters.search && filters.search.trim()) qp.push(`search=${encodeURIComponent(filters.search)}`);
 
         try {
             const res = await fetch(`/adjacent_sujet?${qp.join('&')}`);
@@ -591,6 +605,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (filters.people.length) {
                     queryParams.push(`people=${filters.people.map(encodeURIComponent).join(',')}`);
+                }
+
+                if (filters.search && filters.search.trim()) {
+                    queryParams.push(`search=${encodeURIComponent(filters.search)}`);
                 }
 
                 if (queryParams.length > 0) {
@@ -1019,6 +1037,49 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log(`[NAV DEBUG] ${action} - SujetID: ${sujetId}, LongPress: ${wasLongPress}, CurrentOffset: ${currentOffset}`);
     }
 
+    // --- Search Functions ---
+    function toggleSearchContainer() {
+        const isHidden = searchContainer.classList.contains('hidden');
+        if (isHidden) {
+            searchContainer.classList.remove('hidden');
+            searchInput.focus();
+        } else {
+            searchContainer.classList.add('hidden');
+        }
+    }
+
+    function applySearch() {
+        const searchTerm = searchInput.value.trim();
+        activeFilterState.search = searchTerm;
+
+        // Reset offset and clear history when search changes
+        currentOffset = 0;
+        history.length = 0;
+
+        // Update count and load first result
+        updateSujetCount();
+        loadNextSujet();
+
+        // Hide search container after applying
+        searchContainer.classList.add('hidden');
+    }
+
+    function clearSearch() {
+        searchInput.value = '';
+        activeFilterState.search = '';
+
+        // Reset offset and clear history
+        currentOffset = 0;
+        history.length = 0;
+
+        // Update count and reload
+        updateSujetCount();
+        loadNextSujet();
+
+        // Hide search container
+        searchContainer.classList.add('hidden');
+    }
+
     // --- Event Listeners ---
     saveButton.addEventListener('click', () => handleSujetAction('save'));
 
@@ -1033,6 +1094,18 @@ document.addEventListener('DOMContentLoaded', () => {
     cancelTitleButton.addEventListener('click', hideTitleInput);
     firstSujetButton.addEventListener('click', () => loadEdgeSujet('first'));
     lastSujetButton.addEventListener('click', () => loadEdgeSujet('last'));
+
+    // Search event listeners
+    searchButton.addEventListener('click', toggleSearchContainer);
+    searchApplyButton.addEventListener('click', applySearch);
+    searchClearButton.addEventListener('click', clearSearch);
+
+    // Allow Enter key in search input to apply search
+    searchInput.addEventListener('keypress', (event) => {
+        if (event.key === 'Enter') {
+            applySearch();
+        }
+    });
 
     // Back button: Touch events only (Chrome Android app)
     // No click event needed - touch handles everything

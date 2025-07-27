@@ -80,6 +80,17 @@ def build_sujet_query(filters=None):
         if people_clauses:
             where_clauses.append(f"({ ' OR '.join(people_clauses) })")
 
+    # Search across title and user notes only
+    search_term = filters.get('search', '')
+    if search_term and search_term.strip():
+        search_clauses = []
+        search_value = f"%{search_term.strip()}%"
+        search_clauses.append("original_sujet LIKE ?")
+        search_clauses.append("user_notes LIKE ?")
+        # Add the search parameters
+        query_params.extend([search_value, search_value])
+        where_clauses.append(f"({ ' OR '.join(search_clauses) })")
+
     if where_clauses:
         base_query += " WHERE " + " AND ".join(where_clauses)
 
@@ -97,12 +108,13 @@ def build_sujet_query(filters=None):
 # --- Data Access Functions for App ---
 
 
-def get_next_sujet_by_filter(offset, tags, people):
+def get_next_sujet_by_filter(offset, tags, people, search=None):
     """Fetches the next sujet based on filters and increments its view count."""
     db = get_db()
     filters = {
         'tags': tags,
         'people': people,
+        'search': search,
         'sort_by': 'id'
     }
     query, params = build_sujet_query(filters)
@@ -122,12 +134,13 @@ def get_next_sujet_by_filter(offset, tags, people):
     return None
 
 
-def get_sujets_count_by_filter(tags, people):
+def get_sujets_count_by_filter(tags, people, search=None):
     """Returns the count of sujets matching the given filter criteria."""
     db = get_db()
     filters = {
         'tags': tags,
         'people': people,
+        'search': search,
         'select_count': True
     }
     query, params = build_sujet_query(filters)
@@ -153,18 +166,19 @@ def get_random_sujet_from_db():
     return None
 
 
-def get_first_or_last_sujet_from_db(first=True, tags=None, people=None):
+def get_first_or_last_sujet_from_db(first=True, tags=None, people=None, search=None):
     """Fetches the first or last sujet from the database.
 
     Args:
         first: True for chronologically first (lowest ID), False for last (highest ID)
         tags: Tag filters
         people: People filters
+        search: Search term filter
     """
     db = get_db()
 
     # Build query with filters
-    filters = {'tags': tags or [], 'people': people or []}
+    filters = {'tags': tags or [], 'people': people or [], 'search': search}
     base_query, params = build_sujet_query(filters)
 
     # Remove existing ORDER BY clause if present
@@ -246,7 +260,7 @@ def get_all_unique_people():
     return sorted(people)
 
 
-def get_adjacent_sujet(sujet_id, tags, people, direction):
+def get_adjacent_sujet(sujet_id, tags, people, direction, search=None):
     """
     Fetches the sujet immediately before or after the given ID in chronological order.
 
@@ -255,12 +269,13 @@ def get_adjacent_sujet(sujet_id, tags, people, direction):
         tags: List of tag filters
         people: List of people filters  
         direction: 'next' or 'prev'
+        search: Search term filter
 
     Returns:
         The adjacent sujet or None if not found
     """
     print(
-        f"[ADJACENT DEBUG] Called with sujet_id={sujet_id}, direction={direction}, tags={tags}, people={people}")
+        f"[ADJACENT DEBUG] Called with sujet_id={sujet_id}, direction={direction}, tags={tags}, people={people}, search={search}")
 
     db = get_db()
 
@@ -273,7 +288,8 @@ def get_adjacent_sujet(sujet_id, tags, people, direction):
     # Build base query with filters
     filters = {
         'tags': tags,
-        'people': people
+        'people': people,
+        'search': search
     }
     base_query, params = build_sujet_query(filters)
     print(f"[ADJACENT DEBUG] Base query before modification: {base_query}")

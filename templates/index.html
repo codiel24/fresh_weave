@@ -39,10 +39,10 @@
                     <p style="margin:0.2em 0 0.2em 0;">No more sujets to display. You've reached the end!</p>
                 </div>
                 <div id="sujet-content" class="hidden">
-                    <p id="ai-suggestion" style="margin:0.2em 0 0.2em 0;"></p>
+                    <!-- <p id="ai-suggestion" style="margin:0.2em 0 0.2em 0;"></p> -->
                     <div class="enrichment-area" style="margin-top:0.2em;">
                         <label for="user-notes"></label>
-                        <textarea id="user-notes" rows="4" placeholder="Add your notes here..."></textarea>
+                        <textarea id="user-notes" rows="12" placeholder="Add your notes here..."></textarea>
                         <label for="user-tags"></label>
                         <input type="text" id="user-tags" placeholder="e.g., Travel, AI, Funny, Personal">
                         <div id="tag-toggles"></div>
@@ -54,6 +54,12 @@
 
         <!-- Controls independent of specific sujet content -->
         <div id="global-controls" class="controls">
+            <!-- Hidden search field (initially hidden) -->
+            <div id="search-container" class="search-container hidden">
+                <input type="text" id="search-input" placeholder="Search titles and notes..." />
+                <button id="search-apply-button" class="button">Apply</button>
+                <button id="search-clear-button" class="button">Clear</button>
+            </div>
             <div class="actions">
                 <button id="first-sujet-button" class="button nav-button">&laquo;</button>
                 <button id="back-button" class="button nav-button">&larr;</button>
@@ -61,6 +67,7 @@
                 <button id="skip-button" class="button skip-button">&rarr;</button>
                 <button id="delete-button" class="button delete-button">Del</button>
                 <button id="last-sujet-button" class="button nav-button">&raquo;</button>
+                <button id="search-button" class="button">Srch</button>
                 <button id="quick-spark-button" class="button">Quick</button>
                 <button id="new-sujet-button" class="button">+ New</button>
                 <button id="favorite-button" class="button favorite-button">☆</button>
