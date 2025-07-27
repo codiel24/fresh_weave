@@ -124,7 +124,10 @@ h3 {
     -webkit-box-orient: vertical;
     overflow: hidden;
     line-height: 1.4;
-    max-height: 2.8em;
+    height: 2.8em;
+    /* Fixed height instead of max-height */
+    min-height: 2.8em;
+    /* Ensure minimum height */
     cursor: pointer;
     position: relative;
 }
@@ -435,13 +438,16 @@ button:hover {
 } */
 
 #sujet-display-area {
-    min-height: unset;
+    min-height: 400px;
+    /* Ensure consistent height to prevent button jumping */
     padding: 0;
     margin-bottom: 0.2em;
 }
 
 @media (max-width: 600px) {
     #sujet-display-area {
+        min-height: 380px;
+        /* Slightly smaller for mobile but still consistent */
         margin-bottom: 0.1em;
         padding: 0;
     }

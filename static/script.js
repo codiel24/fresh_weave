@@ -854,7 +854,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function applySearch() {
         const searchTerm = searchInput.value.trim();
-        
+
         // Check if this is an ID search (number only or #number)
         const idMatch = searchTerm.match(/^#?(\d+)$/);
         if (idMatch) {
@@ -862,7 +862,7 @@ document.addEventListener('DOMContentLoaded', () => {
             jumpToSujetById(targetId);
             return;
         }
-        
+
         // Regular text search
         activeFilterState.search = searchTerm;
 
@@ -882,21 +882,21 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch(`/get_sujet_by_id/${sujetId}`);
             const data = await response.json();
-            
+
             if (data.status === 'ok' && data.sujet) {
                 // Clear search term and reset to normal browsing
                 searchInput.value = '';
                 activeFilterState.search = '';
-                
+
                 // Add to history and display the sujet
                 history.push(data.sujet.id);
                 if (history.length > historySize) history.shift();
-                
+
                 displaySujet(data.sujet);
-                
+
                 // Update back button state
                 backButton.disabled = history.length <= 1;
-                
+
                 console.log(`[ID JUMP] Successfully jumped to sujet ID: ${sujetId}`);
             } else {
                 alert(`Sujet ID ${sujetId} not found!`);
@@ -905,7 +905,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error jumping to sujet:', error);
             alert(`Error loading sujet ID ${sujetId}`);
         }
-        
+
         // Hide search container
         searchContainer.classList.add('hidden');
     }
