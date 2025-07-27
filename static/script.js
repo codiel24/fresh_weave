@@ -533,18 +533,15 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Throttle rapid consecutive calls, but allow fast forward during long press
+        // Throttle rapid consecutive calls
         const now = Date.now();
-        const isInLongPress = skipIsLongPressing || backIsLongPressing;
-        const throttleTime = isInLongPress ? 50 : NAVIGATION_THROTTLE_MS; // Shorter throttle during long press
-
-        if (now - lastNavigationTime < throttleTime) {
-            console.log(`[THROTTLE] Navigation call ignored, too soon (${now - lastNavigationTime}ms ago, threshold: ${throttleTime}ms)`);
+        if (now - lastNavigationTime < NAVIGATION_THROTTLE_MS) {
+            console.log(`[THROTTLE] Navigation call ignored, too soon (${now - lastNavigationTime}ms ago)`);
             return;
         }
         lastNavigationTime = now;
 
-        debugNavigation(`LOAD ADJACENT START (${direction})`, currentSujetId, false);
+        debugNavigation(`LOAD ADJACENT START (${direction})`, currentSujetId);
         console.trace(`[TRACE] loadAdjacentSujet called with direction: ${direction}`);
 
         const filters = getActiveFiltersForQuery();
@@ -570,10 +567,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 displaySujet(data.sujet);
-                debugNavigation(`LOAD ADJACENT SUCCESS (${direction})`, data.sujet.id, false);
-
-                // Clean up any stuck long press states after successful navigation
-                cleanupAllLongPressStates();
+                debugNavigation(`LOAD ADJACENT SUCCESS (${direction})`, data.sujet.id);
 
                 // Update back button state
                 backButton.disabled = history.length <= 1;
@@ -847,196 +841,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- Fast Forward Long Press Implementation ---
-    let skipLongPressTimer = null;
-    let skipFastForwardInterval = null;
-    let skipIsLongPressing = false;
-    let skipWasLongPress = false;
-
-    let backLongPressTimer = null;
-    let backFastForwardInterval = null;
-    let backIsLongPressing = false;
-    let backWasLongPress = false;
-
-    // Global cleanup function to reset all long press states
-    function cleanupAllLongPressStates() {
-        // Skip button cleanup
-        if (skipLongPressTimer) {
-            clearTimeout(skipLongPressTimer);
-            skipLongPressTimer = null;
-        }
-        if (skipFastForwardInterval) {
-            clearInterval(skipFastForwardInterval);
-            skipFastForwardInterval = null;
-        }
-        skipIsLongPressing = false;
-        skipWasLongPress = false;
-
-        // Back button cleanup
-        if (backLongPressTimer) {
-            clearTimeout(backLongPressTimer);
-            backLongPressTimer = null;
-        }
-        if (backFastForwardInterval) {
-            clearInterval(backFastForwardInterval);
-            backFastForwardInterval = null;
-        }
-        backIsLongPressing = false;
-        backWasLongPress = false;
-    }
-
-    function startSkipFastForward() {
-        console.log('[DEBUG] startSkipFastForward called, skipIsLongPressing:', skipIsLongPressing);
-        if (skipIsLongPressing) return; // Prevent multiple intervals
-        skipIsLongPressing = true;
-        skipWasLongPress = true; // Set the flag here to ensure it's set before touchend
-        console.log('[DEBUG] Starting skip fast forward interval, skipWasLongPress set to:', skipWasLongPress);
-
-        // Fast forward every 100ms during long press (10 times per second)
-        skipFastForwardInterval = setInterval(() => {
-            console.log('[DEBUG] Skip fast forward tick, disabled:', skipButton.disabled);
-            if (!skipButton.disabled && skipIsLongPressing) {
-                debugNavigation('SKIP FAST FORWARD', currentSujetId, true);
-                // Fast forward just navigates, doesn't save
-                loadAdjacentSujet('next');
-            } else {
-                stopSkipFastForward();
-            }
-        }, 100);
-    }
-
-    function stopSkipFastForward() {
-        console.log('[DEBUG] stopSkipFastForward called');
-        if (skipFastForwardInterval) {
-            clearInterval(skipFastForwardInterval);
-            skipFastForwardInterval = null;
-            console.log('[DEBUG] Skip fast forward interval cleared');
-        }
-        skipIsLongPressing = false;
-    }
-
-    function startBackFastForward() {
-        if (backIsLongPressing) return; // Prevent multiple intervals
-        backIsLongPressing = true;
-        backWasLongPress = true; // Set the flag here to ensure it's set before touchend
-
-        // Fast backward every 100ms during long press (10 times per second) 
-        backFastForwardInterval = setInterval(() => {
-            if (!backButton.disabled && backIsLongPressing) {
-                debugNavigation('BACK FAST FORWARD', currentSujetId, true);
-                loadAdjacentSujet('prev');
-            } else {
-                stopBackFastForward();
-            }
-        }, 100);
-    }
-
-    function stopBackFastForward() {
-        if (backFastForwardInterval) {
-            clearInterval(backFastForwardInterval);
-            backFastForwardInterval = null;
-        }
-        backIsLongPressing = false;
-    }
-
-    // === MOBILE-FIRST APPROACH ===
-    // Primary: Touch events for mobile (Chrome Android)
-    // Fallback: Click events for desktop testing
-
-    // Touch events for mobile - skip button
-    skipButton.addEventListener('touchstart', (e) => {
-        console.log('[DEBUG] Skip touchstart fired');
-        if (!skipButton.disabled) {
-            e.preventDefault(); // Prevent mouse events and click
-            skipWasLongPress = false;
-            console.log('[DEBUG] Skip touchstart - setting timer');
-            skipLongPressTimer = setTimeout(() => {
-                console.log('[DEBUG] Skip long press timer fired - starting fast forward');
-                startSkipFastForward(); // Flag will be set inside this function
-            }, 300); // Back to 300ms as requested
-        }
-    });
-
-    skipButton.addEventListener('touchend', (e) => {
-        console.log('[DEBUG] Skip touchend fired, skipWasLongPress:', skipWasLongPress, 'skipIsLongPressing:', skipIsLongPressing);
-        e.preventDefault(); // Prevent mouse events and click
-        clearTimeout(skipLongPressTimer);
-
-        // Check if we were in long press mode before stopping
-        const wasInLongPress = skipIsLongPressing;
-        stopSkipFastForward();
-
-        // Wait a moment, then check if it was a long press
-        setTimeout(() => {
-            if (!wasInLongPress) {
-                console.log('[DEBUG] Skip touchend - normal navigation');
-                loadAdjacentSujet('next');
-            } else {
-                console.log('[DEBUG] Skip touchend - was long press, no single navigation');
-            }
-
-            // Reset the flag after a delay
-            setTimeout(() => {
-                skipWasLongPress = false;
-            }, 100);
-        }, 10);
-    });
-
-    skipButton.addEventListener('touchcancel', (e) => {
-        e.preventDefault();
-        clearTimeout(skipLongPressTimer);
-        stopSkipFastForward();
-        skipWasLongPress = false;
-    });
-
-    // Touch events for mobile - back button
-    backButton.addEventListener('touchstart', (e) => {
-        console.log('[DEBUG] Back touchstart fired');
-        if (!backButton.disabled) {
-            e.preventDefault(); // Prevent mouse events and click
-            backWasLongPress = false;
-            console.log('[DEBUG] Back touchstart - setting timer');
-            backLongPressTimer = setTimeout(() => {
-                console.log('[DEBUG] Back long press timer fired - starting fast forward');
-                startBackFastForward(); // Flag will be set inside this function
-            }, 300); // Back to 300ms as requested
-        }
-    });
-
-    backButton.addEventListener('touchend', (e) => {
-        console.log('[DEBUG] Back touchend fired, backWasLongPress:', backWasLongPress);
-        e.preventDefault(); // Prevent mouse events and click
-        clearTimeout(backLongPressTimer);
-        stopBackFastForward();
-
-        // If it wasn't a long press, trigger normal back after a short delay
-        if (!backWasLongPress) {
-            console.log('[DEBUG] Back touchend - normal navigation');
-            setTimeout(() => {
-                loadAdjacentSujet('prev');
-            }, 50);
-        } else {
-            console.log('[DEBUG] Back touchend - was long press, no single navigation');
-        }
-
-        // Reset the flag after a delay
-        setTimeout(() => {
-            backWasLongPress = false;
-        }, 150);
-    });
-
-    backButton.addEventListener('touchcancel', (e) => {
-        e.preventDefault();
-        clearTimeout(backLongPressTimer);
-        stopBackFastForward();
-        backWasLongPress = false;
-    });
-
-    // Debug function to track navigation
-    function debugNavigation(action, sujetId, wasLongPress) {
-        console.log(`[NAV DEBUG] ${action} - SujetID: ${sujetId}, LongPress: ${wasLongPress}, CurrentOffset: ${currentOffset}`);
-    }
-
     // --- Search Functions ---
     function toggleSearchContainer() {
         const isHidden = searchContainer.classList.contains('hidden');
@@ -1050,6 +854,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function applySearch() {
         const searchTerm = searchInput.value.trim();
+        
+        // Check if this is an ID search (number only or #number)
+        const idMatch = searchTerm.match(/^#?(\d+)$/);
+        if (idMatch) {
+            const targetId = parseInt(idMatch[1]);
+            jumpToSujetById(targetId);
+            return;
+        }
+        
+        // Regular text search
         activeFilterState.search = searchTerm;
 
         // Reset offset and clear history when search changes
@@ -1061,6 +875,38 @@ document.addEventListener('DOMContentLoaded', () => {
         loadNextSujet();
 
         // Hide search container after applying
+        searchContainer.classList.add('hidden');
+    }
+
+    async function jumpToSujetById(sujetId) {
+        try {
+            const response = await fetch(`/get_sujet_by_id/${sujetId}`);
+            const data = await response.json();
+            
+            if (data.status === 'ok' && data.sujet) {
+                // Clear search term and reset to normal browsing
+                searchInput.value = '';
+                activeFilterState.search = '';
+                
+                // Add to history and display the sujet
+                history.push(data.sujet.id);
+                if (history.length > historySize) history.shift();
+                
+                displaySujet(data.sujet);
+                
+                // Update back button state
+                backButton.disabled = history.length <= 1;
+                
+                console.log(`[ID JUMP] Successfully jumped to sujet ID: ${sujetId}`);
+            } else {
+                alert(`Sujet ID ${sujetId} not found!`);
+            }
+        } catch (error) {
+            console.error('Error jumping to sujet:', error);
+            alert(`Error loading sujet ID ${sujetId}`);
+        }
+        
+        // Hide search container
         searchContainer.classList.add('hidden');
     }
 
@@ -1080,11 +926,15 @@ document.addEventListener('DOMContentLoaded', () => {
         searchContainer.classList.add('hidden');
     }
 
+    // Debug function to track navigation
+    function debugNavigation(action, sujetId) {
+        console.log(`[NAV DEBUG] ${action} - SujetID: ${sujetId}, CurrentOffset: ${currentOffset}`);
+    }
+
     // --- Event Listeners ---
     saveButton.addEventListener('click', () => handleSujetAction('save'));
-
-    // Skip and Back buttons: Touch events only (Chrome Android app)
-    // No click events needed - touch handles everything
+    skipButton.addEventListener('click', () => loadAdjacentSujet('next'));
+    backButton.addEventListener('click', () => loadAdjacentSujet('prev'));
 
     deleteButton.addEventListener('click', handleDeleteSujet);
     quickSparkButton.addEventListener('click', handleQuickSpark);
@@ -1106,9 +956,6 @@ document.addEventListener('DOMContentLoaded', () => {
             applySearch();
         }
     });
-
-    // Back button: Touch events only (Chrome Android app)
-    // No click event needed - touch handles everything
 
     // Title expansion click handler
     originalSujetSpan.addEventListener('click', () => {
