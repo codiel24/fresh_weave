@@ -612,9 +612,18 @@ document.addEventListener('DOMContentLoaded', () => {
             return false;
         }
 
+        return await tryLoadAdjacentSujetById(currentSujetId, direction);
+    }
+
+    async function tryLoadAdjacentSujetById(referenceId, direction) {
+        if (!referenceId) {
+            console.warn('tryLoadAdjacentSujetById called but referenceId is null');
+            return false;
+        }
+
         const filters = getActiveFiltersForQuery();
         const qp = [
-            `id=${currentSujetId}`,
+            `id=${referenceId}`,
             `direction=${direction}`
         ];
         if (filters.tags.length) qp.push(`tags=${filters.tags.map(encodeURIComponent).join(',')}`);
@@ -632,6 +641,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (history.length > historySize) history.shift();
                 }
 
+                // Update current sujet state
+                currentSujetId = data.sujet.id;
+                currentSujetData = data.sujet;
                 displaySujet(data.sujet);
                 debugNavigation(`LOAD ADJACENT SUCCESS (${direction})`, data.sujet.id);
 
@@ -649,7 +661,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return false; // No sujet found in this direction
             }
         } catch (err) {
-            console.error('Error in tryLoadAdjacentSujet:', err);
+            console.error('Error in tryLoadAdjacentSujetById:', err);
             return false;
         }
     }
@@ -791,12 +803,21 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             console.log('[DEBUG] handleDeleteSujet: Response received:', data);
 
-            // After deletion, try next first, then previous if no next available
-            console.log('[DELETE DEBUG] About to call loadAdjacentSujet(next) from deleted sujet:', currentSujetId);
-            const nextSuccess = await tryLoadAdjacentSujet('next');
+            // Store the deleted sujet ID before clearing current state
+            const deletedSujetId = currentSujetId;
+            
+            // Clear current sujet state immediately after successful deletion
+            currentSujetId = null;
+            currentSujetData = null;
+
+            // Try to load adjacent sujets using the deleted sujet ID as reference
+            console.log('[DELETE DEBUG] Trying to find adjacent sujet to deleted ID:', deletedSujetId);
+            
+            // Try next sujet first
+            const nextSuccess = await tryLoadAdjacentSujetById(deletedSujetId, 'next');
             if (!nextSuccess) {
                 console.log('[DELETE DEBUG] No next sujet, trying previous');
-                const prevSuccess = await tryLoadAdjacentSujet('prev');
+                const prevSuccess = await tryLoadAdjacentSujetById(deletedSujetId, 'prev');
                 if (!prevSuccess) {
                     console.log('[DELETE DEBUG] No adjacent sujets found, showing no more sujets message');
                     showNoMoreSujets();
