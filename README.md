@@ -10,7 +10,7 @@
 - **Back (`<`)**: Previous sujet chronologically (like media player back)
 - **Skip (`>`)**: Next sujet chronologically (like media player forward)
 - **Save**: Save data + navigate forward
-- **Delete**: Delete + navigate forward
+- **Delete**: Delete + navigate to adjacent sujet (next → previous → no more sujets)
 
 **IMPORTANT**: Back/Skip are simple chronological navigation - NOT history navigation, NOT marking as skipped.
 
@@ -71,6 +71,26 @@ Multiple async events (touchstart, timeout, touchend) with flag coordination cre
 **Issue Investigated**: Toggle buttons sometimes remain visually active after deselection, "All" button occasionally requires two clicks. Root cause identified as one button remaining inactive after sujet loading, but impact deemed too low for continued engineering effort.
 
 **Documentation**: See `TOGGLE_BUG_INVESTIGATION.md` for complete investigation history and debugging approach.
+
+---
+
+## Navigation Improvements (August 2025)
+
+**Issue Resolved**: Fixed navigation glitch where deleting sujets would jump to the first sujet instead of adjacent ones.
+
+**Problems Fixed**:
+- **Delete Navigation**: When deleting a sujet, navigation now tries next sujet first, then previous, instead of jumping to the beginning
+- **Mode-Specific Filtering**: Clarified filter behavior between tag mode and filter mode
+  - **Tag Mode**: Navigation ignores search filters for free movement through all sujets; counts show unfiltered totals (`current/total`)
+  - **Filter Mode**: Both navigation and counts respect all active filters including search; shows filtered count only
+- **Search Loop Prevention**: Eliminated infinite loops when using search in tag mode
+
+**Technical Changes**:
+- Modified `handleDeleteSujet()` to use `tryLoadAdjacentSujet()` with proper fallback logic
+- Separated navigation filters (`getActiveFiltersForQuery()`) from count display logic
+- Simplified filter implementation for cleaner, more predictable behavior
+
+**Behavior**: Delete navigation now follows logical adjacency (280 → 279 or 281) rather than jumping to first sujet or showing "no more sujets" unnecessarily.
 
 ---
 
