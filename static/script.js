@@ -615,24 +615,32 @@ document.addEventListener('DOMContentLoaded', () => {
         return await tryLoadAdjacentSujetById(currentSujetId, direction);
     }
 
-    async function tryLoadAdjacentSujetById(referenceId, direction) {
+    async function tryLoadAdjacentSujetById(referenceId, direction, ignoreFilters = false) {
         if (!referenceId) {
             console.warn('tryLoadAdjacentSujetById called but referenceId is null');
             return false;
         }
 
-        const filters = getActiveFiltersForQuery();
         const qp = [
             `id=${referenceId}`,
             `direction=${direction}`
         ];
-        if (filters.tags.length) qp.push(`tags=${filters.tags.map(encodeURIComponent).join(',')}`);
-        if (filters.people.length) qp.push(`people=${filters.people.map(encodeURIComponent).join(',')}`);
-        if (filters.search && filters.search.trim()) qp.push(`search=${encodeURIComponent(filters.search)}`);
+
+        // Only apply filters if ignoreFilters is false (default behavior for navigation)
+        if (!ignoreFilters) {
+            const filters = getActiveFiltersForQuery();
+            if (filters.tags.length) qp.push(`tags=${filters.tags.map(encodeURIComponent).join(',')}`);
+            if (filters.people.length) qp.push(`people=${filters.people.map(encodeURIComponent).join(',')}`);
+            if (filters.search && filters.search.trim()) qp.push(`search=${encodeURIComponent(filters.search)}`);
+        }
+
+        console.log('[DELETE DEBUG] Query parameters being sent:', qp.join('&'), 'ignoreFilters:', ignoreFilters);
 
         try {
             const res = await fetch(`/adjacent_sujet?${qp.join('&')}`);
             const data = await res.json();
+
+            console.log('[DELETE DEBUG] Backend response:', data);
 
             if (data.status === 'ok' && data.sujet) {
                 // Add to history if this is a new sujet
@@ -803,21 +811,21 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             console.log('[DEBUG] handleDeleteSujet: Response received:', data);
 
-            // Store the deleted sujet ID before clearing current state
+            // Store the deleted sujet ID for finding adjacent sujets
             const deletedSujetId = currentSujetId;
-            
+
             // Clear current sujet state immediately after successful deletion
             currentSujetId = null;
             currentSujetData = null;
 
-            // Try to load adjacent sujets using the deleted sujet ID as reference
+            // Try to find adjacent sujets using the deleted ID as reference
             console.log('[DELETE DEBUG] Trying to find adjacent sujet to deleted ID:', deletedSujetId);
-            
-            // Try next sujet first
-            const nextSuccess = await tryLoadAdjacentSujetById(deletedSujetId, 'next');
+
+            // Try next sujet first - ignore filters to find chronologically adjacent sujets
+            const nextSuccess = await tryLoadAdjacentSujetById(deletedSujetId, 'next', true);
             if (!nextSuccess) {
                 console.log('[DELETE DEBUG] No next sujet, trying previous');
-                const prevSuccess = await tryLoadAdjacentSujetById(deletedSujetId, 'prev');
+                const prevSuccess = await tryLoadAdjacentSujetById(deletedSujetId, 'prev', true);
                 if (!prevSuccess) {
                     console.log('[DELETE DEBUG] No adjacent sujets found, showing no more sujets message');
                     showNoMoreSujets();

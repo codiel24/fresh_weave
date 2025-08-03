@@ -279,6 +279,35 @@ def get_adjacent_sujet(sujet_id, tags, people, direction, search=None):
 
     db = get_db()
 
+    # If no filters are provided (empty lists/None), do a simple adjacent ID lookup
+    if not tags and not people and not search:
+        print(f"[ADJACENT DEBUG] No filters provided, doing simple ID-based lookup")
+
+        if direction == 'next':
+            query = "SELECT id, original_sujet, ai_suggestion, view_count, user_notes, user_tags, status, person, date_created FROM sujets WHERE id > ? ORDER BY id ASC LIMIT 1"
+        else:  # prev
+            query = "SELECT id, original_sujet, ai_suggestion, view_count, user_notes, user_tags, status, person, date_created FROM sujets WHERE id < ? ORDER BY id DESC LIMIT 1"
+
+        print(f"[ADJACENT DEBUG] Simple query: {query}")
+        print(f"[ADJACENT DEBUG] Simple params: [{sujet_id}]")
+
+        sujet = db.execute(query, (sujet_id,)).fetchone()
+
+        if sujet:
+            print(
+                f"[ADJACENT DEBUG] Found simple adjacent sujet: {sujet['id']} - {sujet['original_sujet']}")
+            # Increment view count
+            db.execute(
+                'UPDATE sujets SET view_count = view_count + 1 WHERE id = ?', (sujet['id'],))
+            db.commit()
+            return dict(sujet)
+        else:
+            print(f"[ADJACENT DEBUG] No simple adjacent sujet found")
+            return None
+
+    # Original complex logic for when filters are provided
+    print(f"[ADJACENT DEBUG] Filters provided, using complex query logic")
+
     # Get the current sujet's ID for comparison (ID is more reliable than dates)
     current_sujet = get_sujet_by_id(sujet_id)
     if not current_sujet:
@@ -326,6 +355,8 @@ def get_adjacent_sujet(sujet_id, tags, people, direction, search=None):
 
     # Execute query
     sujet = db.execute(base_query, params).fetchone()
+
+    print(f"[ADJACENT DEBUG] Query executed, result: {sujet}")
 
     if sujet:
         print(
