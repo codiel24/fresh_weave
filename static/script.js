@@ -402,13 +402,22 @@ document.addEventListener('DOMContentLoaded', () => {
             return {
                 tags: [],  // Send empty array to not filter by tags
                 people: [], // Send empty array to not filter by people
-                search: activeFilterState.search // Keep search in tag mode too
+                search: '' // Don't apply search filter in tag mode for navigation
             };
         }
     }
 
     async function updateSujetCount() {
-        const filters = getActiveFiltersForQuery();
+        // In filter mode, use active filters; in tag mode, show unfiltered counts
+        const filters = editMode === 'filter' ? {
+            tags: activeFilterState.tags,
+            people: activeFilterState.people,
+            search: activeFilterState.search
+        } : {
+            tags: [],
+            people: [],
+            search: ''
+        };
         let queryParams = [];
         if (filters.tags && filters.tags.length > 0) {
             queryParams.push(`tags=${filters.tags.map(encodeURIComponent).join(',')}`);
@@ -450,7 +459,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadNextSujet() {
         console.log('[NAV DEBUG] loadNextSujet called with offset:', currentOffset, 'mode:', editMode);
 
-        // Get the active filters
+        // Get the active filters for navigation - in tag mode this ignores search to allow free navigation
         const filters = getActiveFiltersForQuery();
         console.log('[NAV DEBUG] Active filters:', filters);
 
@@ -480,6 +489,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentSujetData = data.sujet;
                 currentSujetId = data.sujet.id;
                 displaySujet(data.sujet);
+
+                // In tag mode, clear search filter after finding a sujet to allow free navigation
+                if (editMode === 'tag' && activeFilterState.search) {
+                    console.log('[TAG MODE] Clearing search filter after loading sujet for free navigation');
+                    activeFilterState.search = '';
+                    searchInput.value = '';
+                }
 
                 // Update back button state
                 backButton.disabled = history.length <= 1;
@@ -569,6 +585,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 displaySujet(data.sujet);
                 debugNavigation(`LOAD ADJACENT SUCCESS (${direction})`, data.sujet.id);
 
+                // In tag mode, clear search filter after navigating to allow free navigation
+                if (editMode === 'tag' && activeFilterState.search) {
+                    console.log('[TAG MODE] Clearing search filter after navigation for free movement');
+                    activeFilterState.search = '';
+                    searchInput.value = '';
+                }
+
                 // Update back button state
                 backButton.disabled = history.length <= 1;
             } else if (data.status === 'no_more_sujets') {
@@ -581,6 +604,73 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (err) {
             handleLoadError('Network error navigating: ' + err.message);
         }
+    }
+
+    async function tryLoadAdjacentSujet(direction) {
+        if (!currentSujetId) {
+            console.warn('tryLoadAdjacentSujet called but currentSujetId is null');
+            return false;
+        }
+
+        const filters = getActiveFiltersForQuery();
+        const qp = [
+            `id=${currentSujetId}`,
+            `direction=${direction}`
+        ];
+        if (filters.tags.length) qp.push(`tags=${filters.tags.map(encodeURIComponent).join(',')}`);
+        if (filters.people.length) qp.push(`people=${filters.people.map(encodeURIComponent).join(',')}`);
+        if (filters.search && filters.search.trim()) qp.push(`search=${encodeURIComponent(filters.search)}`);
+
+        try {
+            const res = await fetch(`/adjacent_sujet?${qp.join('&')}`);
+            const data = await res.json();
+
+            if (data.status === 'ok' && data.sujet) {
+                // Add to history if this is a new sujet
+                if (history.length === 0 || history[history.length - 1] !== data.sujet.id) {
+                    history.push(data.sujet.id);
+                    if (history.length > historySize) history.shift();
+                }
+
+                displaySujet(data.sujet);
+                debugNavigation(`LOAD ADJACENT SUCCESS (${direction})`, data.sujet.id);
+
+                // In tag mode, clear search filter after navigating to allow free navigation
+                if (editMode === 'tag' && activeFilterState.search) {
+                    console.log('[TAG MODE] Clearing search filter after navigation for free movement');
+                    activeFilterState.search = '';
+                    searchInput.value = '';
+                }
+
+                // Update back button state
+                backButton.disabled = history.length <= 1;
+                return true;
+            } else {
+                return false; // No sujet found in this direction
+            }
+        } catch (err) {
+            console.error('Error in tryLoadAdjacentSujet:', err);
+            return false;
+        }
+    }
+
+    function showNoMoreSujets() {
+        // Clear current sujet data
+        currentSujetId = null;
+        currentSujetData = null;
+
+        // Hide sujet content and show no more sujets message
+        sujetContentDiv.classList.add('hidden');
+        noMoreSujetsDiv.classList.remove('hidden');
+
+        // Clear form fields
+        originalSujetSpan.textContent = '';
+        displaySujetIdSpan.textContent = '';
+        userNotesTextarea.value = '';
+        userTagsInput.value = '';
+
+        // Update button states
+        updateGlobalButtonStates(false, history.length);
     }
 
     async function loadEdgeSujet(edge) {
@@ -701,9 +791,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             console.log('[DEBUG] handleDeleteSujet: Response received:', data);
 
-            // After deletion, move to the next sujet
+            // After deletion, try next first, then previous if no next available
             console.log('[DELETE DEBUG] About to call loadAdjacentSujet(next) from deleted sujet:', currentSujetId);
-            loadAdjacentSujet('next');
+            const nextSuccess = await tryLoadAdjacentSujet('next');
+            if (!nextSuccess) {
+                console.log('[DELETE DEBUG] No next sujet, trying previous');
+                const prevSuccess = await tryLoadAdjacentSujet('prev');
+                if (!prevSuccess) {
+                    console.log('[DELETE DEBUG] No adjacent sujets found, showing no more sujets message');
+                    showNoMoreSujets();
+                }
+            }
             updateSujetCount();
         } catch (error) {
             console.error('Network error when deleting sujet:', error);
